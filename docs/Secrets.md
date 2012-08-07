@@ -1,4 +1,24 @@
 
+History Trivia
+---------
+
+Previous name: The Universal Programming Language. 
+
+I started implementing it as a Ruby gem, [Uni\_Lang](https://github.com/da99/Uni_Lang), 
+but I switched entirely to Coffeescript on Node.js. CoffeeScript is a good enough
+Ruby.
+
+
+Why the stupid name?
+-------------------
+
+As a practical joke on all overpaid, idiot middle managers telling their 
+overlords they will be implementating "the solution with i love u."
+
+Also, people love stupid. People love outrageous. When your goal in life 
+is to pro-create in the suburbs, your standards in entertainment are 
+toddler-like.
+
 What apps should you create?
 ----------------------------
 
@@ -32,7 +52,8 @@ If you want to truly combine the Internet with desktop apps, look into Squeak, P
 or Factor (by Slava Pestov).  Use LivelyKernel, Tweak, or Morphic for ideas on creating a new UI 
 system.
 
-What is The Universal Language?
+
+What is i\_love\_u (aka The Universal Language)?
 -------------------------------
 
 It's not a language.  I don't know what to call
@@ -59,14 +80,4 @@ If you want to learn to program, [learn C](http://learncodethehardway.org/)
 AND [Forth](http://www.forth.com/starting-forth/). If you want to avoid
 programming and just make interactive web sites, use i\_love\_u.
 
-
-Why the stupid name?
--------------------
-
-As a practical joke on all overpaid, idiot middle managers telling their 
-overlords they will be implementating "the solution with i love u."
-
-Also, people love stupid. People love outrageous. When your goal in life 
-is to pro-create in the suburbs, your standards in entertainment are 
-toddler-like.
 

@@ -2,7 +2,7 @@
 i\_love\_u
 ---------
 
-Fall in love with the computer all over again.
+Fall in love with computers all over again.
 
   
 Installation and Usage:
@@ -29,9 +29,12 @@ Commercial Break:
 
 [British Airways](http://www.youtube.com/watch?v=Yxbgm9Bmkzw)
 
-[The Adventures of Buckaroo Banzai](http://www.amazon.com/dp/B00005JKEX/?tag=miniunicom-20)
+[The Adventures of Buckaroo Banzai](http://www.youtube.com/watch?feature=player_detailpage&v=8MqJ3iGBdOo#t=24s)
 
-[Slava Pestov on Factor](http://www.youtube.com/watch?v=f_0QlhYlS8g)
+<!-- [Slava Pestov on Factor](http://www.youtube.com/watch?v=f_0QlhYlS8g) -->
+
+<!-- http://www.amazon.com/dp/B00005JKEX/?tag=miniunicom-20 -->
+
 
 Ending Credits:
 --------------
@@ -39,13 +42,12 @@ Ending Credits:
 *Written, Produced, and Directed* <br />
 by reading, pacing around, and thinking.
 
-Previous name: The Universal Programming Language. I started off creating a Ruby gem,
-called [Uni\_Lang](https://github.com/da99/Uni_Lang), but I switched entirely to Coffeescript on Node.js.
 
 Do you still hate computers?
 ----------------------------
 
-Try [Squeak](http://www.youtube.com/watch?v=O01DfQlvyXM)
+Try [Squeak](http://www.youtube.com/results?search_query=squeak+etoys&oq=squeak+etoys). 
+
 
 The End
 -------
