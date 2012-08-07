@@ -5,12 +5,10 @@ i\_love\_u
 Fall in love with computers all over again.
 
 
-Secrets of i\_love\_u
+Mastering the subtle art of writing i\_love\_u code.
 -------
 
-The Majority: you gets your idiot friends to teach it to you.
-
-The Minority: You read the source code. 
+Get your idiot friends to teach it to you.
 
 
 Installation and Usage:
