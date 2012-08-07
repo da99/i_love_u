@@ -4,7 +4,15 @@ i\_love\_u
 
 Fall in love with computers all over again.
 
-  
+
+Secrets of i\_love\_u
+-------
+
+The Majority: you gets your idiot friends to teach it to you.
+
+The Minority: You read the source code. 
+
+
 Installation and Usage:
 -----------------------
 
