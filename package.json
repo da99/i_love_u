@@ -1,8 +1,12 @@
 {
   "name": "i_love_u",
   "version": "0.1.0",
-  "description": "For people who hate programmers.",
-  "main": "index.js",
+  "description": "Fall in love with computers all over again.",
+  "main": "lib/i_love_u.js",
+  "dependencies": {
+    "englishy": "*",
+    "humane_list": "*"
+  },
   "scripts": {
     "test": "mocha"
   },
