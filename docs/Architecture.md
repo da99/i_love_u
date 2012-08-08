@@ -1,10 +1,24 @@
 
-The way it's suppose to work.
----------------
+The Building Blocks of i\_love\_u writings.
+-------------------------------------------
 
-### Parsing:
+* Numbers.
+* Strings: These are also code blocks to be parsed and executed.
+* The Humane List: a combination of Array and Hash. 
+* Values (aka variables, objects):
+  * a Humane List with required keys: value, acts\_like
+  * There are no "parent classes". This is prototype classes
+  using the "acts\_like" key to lookup properties.
+  * Methods are properties with strings of code.
+* i\_love\_u files: a collection of all other building blocks.
 
-Uses the [englishy parsing](https://github.com/da99/englishy):
+With these you should be able to create anything you can imagine.
+
+
+Parsing:
+--------
+
+Uses [englishy parsing](https://github.com/da99/englishy):
 
     This is a line.
     This line is continued
@@ -13,6 +27,8 @@ Uses the [englishy parsing](https://github.com/da99/englishy):
 
       Content goes here.
 
+Other stuff that may change.
+-----------------------------
 ### Core Functionality Implementation in Native Language:
 
 One of the harder problems to solve was figuring out the core functionality
@@ -23,14 +39,6 @@ to implement anything using a long block of memory.
 Arrays, Hashes, Strings, Classes, etc... They are all there to automate finding 
 and storing stuff in a block of memory.
 
-### Implementation of Classes:
-
-A KVI data structure for implementation of prototype-based classes:
-
-    {
-      'name' : 'Paragraph',
-      'class ancestors' : { 'Web-Page-Element', 'Display-As-Block' }
-    }
 
 ### Scope:
 
