@@ -12,6 +12,19 @@ describe "i_love_u", () ->
       l = new_luv("This is code.")
       assert.equal l.code(), "This is code."
 
+    it "sets .original_code() to working copy of code.", () ->
+      l = new_luv("This is origin.")
+      assert.equal l.original_code(), "This is origin."
+
+    it "sets .stack() to []", () ->
+      l = new_luv("This starts a stack.")
+      assert.deepEqual l.d.stack, []
+
+    it ".address is write_able", () ->
+      l = new_luv("This is code.")
+      l.write 'address', "/some.address/"
+      assert.equal l.address(), "/some.address/"
+      
   # it "saves values to stack", () ->
     # u = new_luv """
       # Val is 1

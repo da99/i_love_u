@@ -1,59 +1,52 @@
 parser = require 'englishy'
 englishy = require 'englishy'
 
-Property_ize = (proto) ->
+rw = {}
+rw.ize = (klass) ->
   me = arguments.callee
-  
   if !me.read_able
-    me.read_able = (args...) ->
-      for prop in args
-        this[prop] = () ->
-          @d[arguments.callee.prop_name]
-        this[prop].prop_name = prop
+    me.on_prototype = "write".split(/\s+/)
+    me.on_class = "read_able write_able read_write_able".split(/\s+/)
+    me.funcs = 
+      read_write_able: (args...) ->
+        @read_able(args...)
+        @write_able(args...)
         
-    me.write_able = (args...) ->
-      for prop in args
-        @d ?= {}
-        @d['writers'] ?= []
-        @d['writers'].push prop
+      read_able: (args...) ->
+        for prop in args
+          this.prototype[prop] = () ->
+            @d[arguments.callee.prop_name]
+          this.prototype[prop].prop_name = prop
+          
+      write_able:  (args...) ->
+        for prop in args
+          this.prototype.write_ables ?= []
+          this.prototype.write_ables.push prop
 
-    me.write = (prop, val) ->
-      if !(prop in @d['writers'])
-        throw new Error("#{prop} is not allowed to be updated.")
-      @d[prop] = val
+      write: (prop, val) ->
+        if !(prop in this['write_ables'])
+          throw new Error("#{prop} is not write_able.")
+        @d[prop] = val
 
-    me.read_write_able = (args...) ->
-      @read_able(args...)
-      @write_able(args...)
-      
-    me.methods = "read_able write_able write read_write_able".split(/\s+/)
-  
-  for m in me.methods
-    proto[m] = me[m]
-   
+  for m in me.on_prototype
+    klass.prototype[m] = me.funcs[m]
+    
+  for m in me.on_class
+    klass[m] = me.funcs[m]
 
 exports.i_love_u = class i_love_u
   
   @No_Match = "no_match"
   @Base_Procs = []
 
-  # attr_accessor :address, :pattern, :stack, :procs, :data
-  # attr_reader   :code
-
-  # for prop in "address pattern stack procs data code".split( /\s+/ )
-    # eval """
-      # #{this}.prototype.#{prop} = function() {
-        # return this.d.#{prop};
-      # };
-    # """
-      
-  Property_ize(this.prototype)
+  rw.ize(this)
+  
+  @read_write_able 'address', 'pattern', 'stack', 'procs', 'data'
+  @read_able 'code', 'original_code'
 
   constructor: (str) ->
     @d = {}
     @d.original_code = str
-    @read_write_able 'address', 'pattern', 'stack', 'procs', 'data'
-    @read_able 'code', 'original_code'
     
     
     @d.original_code = str
@@ -65,55 +58,47 @@ exports.i_love_u = class i_love_u
   parse: () ->
     @d.tree = new englishy.Englishy @code()
 
-  # def run
-    
-    # this = self
-    # lines = parse( code )
-
-    # lines.each_with_index { |pair, i|
+  run: () ->
+    lines = @parse( code )
+    for pair, i in lines
       
-      # line, code = pair
-      # match = false
-      # stop  = false
-      # current  = line
-      # compiled = line
+      line = pair[0]
+      code = pair[1]
+      match = false
+      stop  = false
+      current  = line
+      compiled = line
       
-      # while !stop do
-        # compiled = current
-        # current = procs.inject(line) { |memo, o|
-          # o.run self, current, code
-        # }
+      while !stop 
+        compiled = current
+        current = procs.inject line,  (memo, o) ->
+          o.run self, current, code
 
-        # if compiled == current
-          # data.each { |k,v|
-            # current = current.gsub( %r!(\A|\s+)#{Regexp.escape k}(\s+|\Z)! , " #{v} ").strip
-          # }
-        # end
+        if compiled == current
+          for k,v of data
+            current = current.replace( /(\A|\s+)#{Regexp.escape k}(\s+|\Z)/ , " #{v} ").englishy('strip')
 
-        # stop = compiled == current
-      # end
-
-    # }
-
-    # stack
+        # stop = (compiled is current)
+    stack
   
 exports.Procedure = class Procedure
 
-  Property_ize(this.prototype)
+  rw.ize(this)
+  @read_write_able 'pattern', 'regexp', 'data', 'stack', 'procedure'
 
   constructor: (pattern) ->
     @d = {}
     @d.data = {}
-    @read_write_able 'pattern', 'regexp', 'data', 'stack', 'procedure'
     @d.pattern = pattern
+    return "not ready"
     str = Regexp.escape(pattern.strip)
-    str = str.gsub(%r"\\\[\s*WORD\s*\\\]", "([a-zA-Z0-9\.\_\-]+)")
-    str = str.gsub(%r"\\\[\s*NUM\s*\\\]",  "([\+\-]?[\-0-9\.]+)")
+    str = str.replace(/\[\s*WORD\s*\\\]/, "([a-zA-Z0-9\.\_\-]+)")
+    str = str.replace(/\[\s*NUM\s*\]/,  "([\+\-]?[\-0-9\.]+)")
     @d.regexp = Regexp.new str
 
   run: ( env, line, code ) ->
     return line unless @regexp().test line
-    @d.data["Args"]         = $~.captures
+    @d.data["Args"]         = captures
     @d.data["Block"]        = code
     @d.data["Outer-Block"]  =  env
     r= procedure(this)
@@ -121,18 +106,21 @@ exports.Procedure = class Procedure
     line.replace(regexp, r.toString() )
 
   
-# i_love_u::Base_Procs << i_love_u::Procedure.new("[NUM] + [NUM]") { |o|
-  # o.procedure = lambda { |env|
-    # env.data['Args'].inject(0) { |m, n|
-      # m.to_f + n.to_f
-      # 
+add_num = new Procedure "[NUM] + [NUM]"
+add_num.procedure = (env) ->
+  env.data['Args'].inject 0, (m, n) ->
+    m.to_f + n.to_f
+      
 
-# i_love_u::Base_Procs << i_love_u::Procedure.new("[WORD] is [WORD]") { |o|
-  # o.procedure = lambda { |env|
-    # name, val = env.data['Args']
-    # env.data['Outer-Block'].data[name] = val
+word_is_word = new Procedure "[WORD] is [WORD]"
+word_is_word.procedure = (env) ->
+  name = env.data['Args'][0]
+  val  = env.data['Args'][1]
+  env.data['Outer-Block'].data[name] = val
      
-   
+
+i_love_u.Base_Procs.push add_num
+i_love_u.Base_Procs.push word_is_word
 
 
 
