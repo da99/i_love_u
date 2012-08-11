@@ -4,7 +4,7 @@
   "description": "Fall in love with computers all over again.",
   "main": "lib/i_love_u.js",
   "dependencies": {
-    "englishy": "*",
+    "englishy": ">0.2.0",
     "humane_list": "*"
   },
   "scripts": {

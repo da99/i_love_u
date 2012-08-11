@@ -4,6 +4,9 @@ assert = require 'assert'
 new_luv = (str) ->
   new luv.i_love_u(str)
 
+stack = (env) ->
+  ( (obj.value) for obj in env.data() )
+
 describe "i_love_u", () ->
   
   describe 'constructor()', () ->
@@ -16,22 +19,24 @@ describe "i_love_u", () ->
       l = new_luv("This is origin.")
       assert.equal l.original_code(), "This is origin."
 
-    it "sets .stack() to []", () ->
-      l = new_luv("This starts a stack.")
-      assert.deepEqual l.d.stack, []
+    it "sets .list() to []", () ->
+      l = new_luv("This starts a list.")
+      assert.deepEqual l.list(), []
 
     it ".address is write_able", () ->
       l = new_luv("This is code.")
       l.write 'address', "/some.address/"
       assert.equal l.address(), "/some.address/"
       
-  # it "saves values to stack", () ->
-    # u = new_luv """
-      # Val is 1
-      # Val + 5
-    # """
-    # u.run()
-    # assert.deepEqual u.stack(), ["1", 6.0]
+  describe 'run()', () ->
+    
+    it "saves values to list", () ->
+      u = new_luv """
+        One is 1.
+        Six is One + 5.
+      """
+      u.run()
+      assert.deepEqual stack(u), ["1", 6.0]
 
   # it "runs", () ->
     # prog  = """
@@ -52,7 +57,7 @@ describe "i_love_u", () ->
 
     # u =  new_luv prog
     # u.run()
-    # assert.deepEqual u.stack(), ["Super"]
+    # assert.deepEqual u.list(), ["Super"]
 
 
 

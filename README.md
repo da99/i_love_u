@@ -21,11 +21,11 @@ Installation and Usage:
     love = require("i_love_u")
 
     u = new love.Code """
-      Val is 1.
-      Val + 5.
+      One is 1.
+      Six is One + 5.
     """
     u.run()
-    u.stack()
+    u.list() // Instead of 'stack', I call it a 'list'.
     
     # --> ["1", 6.0]
     

@@ -1,15 +1,33 @@
 parser = require 'englishy'
 englishy = require 'englishy'
 
-Array.prototype.rubyish =
-  inject: (stat, func) ->
+if !Array.prototype.inject
+  Array.prototype.inject = (start, func) ->
     memo = start
     for i in this
       memo = func(memo, i)
     memo
+    
 if !RegExp.escape
   RegExp.escape= (s) ->
     return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
+  
+if !RegExp.captures
+  RegExp.captures= ( r, str ) ->
+    r.lastIndex = 0
+    match = null
+    vals  = null
+    while (match = r.exec(str))
+      vals ?= []
+      vals.push match
+    vals
+
+if !RegExp.first_capture
+  RegExp.first_capture= (r, str ) ->
+    r.lastIndex = 0
+    match = null
+    vals  = null
+    r.exec(str)
     
 rw = {}
 rw.ize = (klass) ->
@@ -51,7 +69,7 @@ exports.i_love_u = class i_love_u
 
   rw.ize(this)
   
-  @read_write_able 'address', 'pattern', 'stack', 'procs', 'data'
+  @read_write_able 'address', 'pattern', 'list', 'procs', 'data'
   @read_able 'code', 'original_code'
 
   constructor: (str) ->
@@ -61,9 +79,26 @@ exports.i_love_u = class i_love_u
     
     @d.original_code = str
     @d.code    = str.englishy('standardize')
-    @d.procs   = [].concat this.Base_Procs
-    @d.stack   = []
-    @d.data    = {}
+    @d.procs   = [].concat(@constructor.Base_Procs)
+    @d.list    = []
+    
+  add_to_data: (k, v) ->
+    obj = 
+      name: k
+      value: v
+      inherits_from: []
+
+    @list().push obj
+
+  add_to_list: (val) ->
+    @list().push val
+
+  data: ( k ) ->
+    if k
+      val = v for v in @list when v.name is k
+      val.value
+    else
+      vals = (v for v in @list() when v.hasOwnProperty("name") and v.hasOwnProperty("value") )
     
   run: () ->
     lines = (new englishy.Englishy @code()).to_array()
@@ -71,39 +106,46 @@ exports.i_love_u = class i_love_u
     for pair, i in lines
       
       line = pair[0]
-      code = pair[1]
+      code_block = pair[1]
+
+      if line and !code_block
+        line = line.englishy('remove_end', 'period')
+      else if line and code_block
+        line = line.englishy('remove_end', 'colon')
+        
       match = false
       stop  = false
       current  = line
       compiled = line
       
       while !stop
-        # compiled = current
-        # current = procs.inject line,  (memo, o) ->
-          # o.run me, current, code
-
-        # if compiled is current
-          # if @data()
-            # for k,v of @data()
-              # r_txt = "(?:^|\s+)" + Regexp.escape(k) + "(?:\s+|$)"
-              # current = current.replace( (new RegExp(r_txt, "g") , " #{v} ").englishy('strip')
+        compiled = current
+        
+        for v in @data()
+          r_txt = "(?:^|\\s+)" + RegExp.escape(v.name) + "(?:\\s+|$)"
+          regexp = (new RegExp r_txt, "g")
+          current = current.replace( regexp, " #{v.value} ").englishy('strip')
+          
+        current = @procs().inject current,  (memo, o) ->
+          o.run me, memo, code_block
 
         stop = (compiled is current)
-    stack
+        
+    @list()
   
 exports.Procedure = class Procedure
 
   rw.ize(this)
-  @read_write_able 'pattern', 'regexp', 'data', 'stack', 'procedure'
+  @read_write_able 'pattern', 'regexp', 'data', 'list', 'procedure'
 
-  word_reg: /\[\s*WORD\s*\]/g
-  num_reg:  /\[\s*NUM\s*\]/g
+  word_reg: /\\\[\s*WORD\s*\\\]/g
+  num_reg:  /\\\[\s*NUM\s*\\\]/g
   
   constructor: (pattern) ->
     @d = {}
     @d.data = {}
     @d.pattern = pattern
-    @d.stack = []
+    @d.list = []
     
     str = RegExp.escape(pattern.englishy 'strip')
     str = str.replace( @word_reg, "([a-zA-Z0-9\.\_\-]+)" )
@@ -111,26 +153,31 @@ exports.Procedure = class Procedure
     @d.regexp = new RegExp str, "g"
 
   run: ( env, line, code ) ->
-    return line unless @regexp().test line
+    captures = RegExp.first_capture(@regexp(), line)
+    return line unless captures
     @d.data["Args"]         = captures
     @d.data["Block"]        = code
     @d.data["Outer-Block"]  = env
-    r= procedure(this)
-    @stack().push r
-    line.replace( @regexp, r.toString() )
+    r = @procedure()(this)
+    l = line.replace( captures[0], r.toString() )
+    l
 
   
 add_num = new Procedure "[NUM] + [NUM]"
 add_num.write 'procedure', (env) ->
-  env.data()['Args'].inject 0, (m, n) ->
-    m.to_f + n.to_f
+  m = env.data()['Args'][1]
+  n = env.data()['Args'][2]
+  val = parseFloat(m) + parseFloat(n)
+  val
       
 
 word_is_word = new Procedure "[WORD] is [WORD]"
 word_is_word.write 'procedure', (env) ->
-  name = env.data()['Args'][0]
-  val  = env.data()['Args'][1]
-  env.data()['Outer-Block'].data()[name] = val
+  pair = env.data()['Args']
+  name = pair[1]
+  val  = pair[2]
+  env.data()['Outer-Block'].add_to_data name, val
+  val
      
 
 i_love_u.Base_Procs.push add_num
