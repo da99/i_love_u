@@ -140,6 +140,7 @@ exports.Procedure = class Procedure
 
   word_reg: /\\\[\s*WORD\s*\\\]/g
   num_reg:  /\\\[\s*NUM\s*\\\]/g
+  escaped_end_period: /\\\.$/
   
   constructor: (pattern) ->
     @d = {}
@@ -150,6 +151,8 @@ exports.Procedure = class Procedure
     str = RegExp.escape(pattern.englishy 'strip')
     str = str.replace( @word_reg, "([a-zA-Z0-9\.\_\-]+)" )
     str = str.replace( @num_reg,  "([\+\-]?[\-0-9\.]+)"  )
+    if @escaped_end_period.test str
+      str = "^" + str.replace( @escaped_end_period, "" ) + "$"
     @d.regexp = new RegExp str, "g"
 
   run: ( env, line, code ) ->
@@ -171,7 +174,7 @@ add_num.write 'procedure', (env) ->
   val
       
 
-word_is_word = new Procedure "[WORD] is [WORD]"
+word_is_word = new Procedure "[WORD] is: [WORD]."
 word_is_word.write 'procedure', (env) ->
   pair = env.data()['Args']
   name = pair[1]

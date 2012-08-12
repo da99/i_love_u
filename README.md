@@ -21,8 +21,8 @@ Installation and Usage:
     love = require("i_love_u")
 
     u = new love.Code """
-      One is 1.
-      Six is One + 5.
+      One is: 1.
+      Six is: One + 5.
     """
     u.run()
     u.list() // Instead of 'stack', I call it a 'list'.

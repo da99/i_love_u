@@ -32,8 +32,8 @@ describe "i_love_u", () ->
     
     it "saves values to list", () ->
       u = new_luv """
-        One is 1.
-        Six is One + 5.
+        One is: 1.
+        Six is: One + 5.
       """
       u.run()
       assert.deepEqual stack(u), ["1", 6.0]
