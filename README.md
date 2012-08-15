@@ -20,7 +20,7 @@ Installation and Usage:
 
     love = require("i_love_u")
 
-    u = new love.Code """
+    u = new love.i_love_u """
       One is: 1.
       Six is: One + 5.
     """

@@ -1,12 +1,9 @@
-parser = require 'englishy'
-englishy = require 'englishy'
+englishy     = require 'englishy'
+string_da99  = require 'string_da99'
+funcy_perm   = require 'funcy_perm'
+arr_surgeon  = require 'array_surgeon'
+_            = require 'underscore'
 
-if !Array.prototype.inject
-  Array.prototype.inject = (start, func) ->
-    memo = start
-    for i in this
-      memo = func(memo, i)
-    memo
     
 if !RegExp.escape
   RegExp.escape= (s) ->
@@ -74,9 +71,11 @@ exports.Args = class Args
   @types: ['WORD', 'NUM', 'CHAR']
   @escaped_end_period: /\\\.$/
   @regexp_types_used: /\!\>([^\s]+)\</g
+  @regexp_any_type: /\!\>[^\s]+\</g
   
   rw.ize(this)
-  @read_write_able "types", "regexp"
+  @read_write_able "types", "regexp", "any_type_regexp"
+  
   constructor: (raw_str) ->
     @write 'types', (v[1] for v in RegExp.captures( Args.regexp_types_used, raw_str ))
       
@@ -87,10 +86,45 @@ exports.Args = class Args
       str = "^" + str.replace( Args.escaped_end_period, "" ) + "$"
       
     @write 'regexp', (new RegExp str, "g")
+    
+    str = RegExp.escape(raw_str)
+    for t in Args.types
+      str = str.replace( Args.regexp_any_type, "([^\\s]+)" )
+    if Args.escaped_end_period.test str
+      str = "^" + str.replace( Args.escaped_end_period, "" ) + "$"
+      
+    @write 'any_type_regexp', (new RegExp str, "g")
 
-  sentence_match: (sent) ->
-    caps = RegExp.captures( @regexp(), sent )
-    return false if !caps or caps.length is 0
+  compile: (env, line, code) ->
+    caps = RegExp.first_capture( @any_type_regexp(), line )
+    # if !caps
+      # console.log("ignored", line, @regexp())
+    return null if !caps or caps.length is 0
+    raw_vals = caps.shift()
+    vals = []
+    invalid = []
+
+    for raw_v, i in caps
+      type = Args[ @types()[i] ]
+      # If variable, insert value
+      v = if env.is_name_of_data(raw_v)
+        env.data(raw_v)
+      else
+        raw_v
+        
+      if type.is_valid(v)
+        vals.push v
+      else
+        invalid.push(v)
+        
+    if invalid.length > 0
+      console.log("ignored", line, caps, invalid, @regexp())
+    return null if invalid.length > 0 
+    
+    final = 
+      values: vals
+      types: @types()
+      
 
     
   @WORD: 
@@ -100,14 +134,14 @@ exports.Args = class Args
       @d.user_pat ?= new RegExp("!>WORD<", "g")
       
     regexp_string: () ->
-      @d.reg_str ?= "([a-zA-Z0-9\.\_\-]+)"
+      @d.reg_str ?= "([a-zA-Z0-9\\.\\_\\-]+)"
         
-    is: (unk) ->
-      return false if !unk.englishy 
-      !unk.englishy('is_whitespace')
+    is_valid: (unk) ->
+      return false if !unk.is_whitespace()
+      !unk.is_whitespace()
       
     convert: (unk) ->
-      unk.englishy('strip')
+      unk.strip()
       
   @NUM:
     d: {}
@@ -115,9 +149,9 @@ exports.Args = class Args
       @d.user_pat ?= new RegExp("!>NUM<", 'g')
 
     regexp_string: () ->
-      @regexp_string_data ?= "([\-]?[0-9\.]+)"
+      @regexp_string_data ?= "([\\-]?[0-9\\.]+)"
       
-    is: (unk) ->
+    is_valid: (unk) ->
       parseFloat(unk) != NaN
 
     convert: (unk) ->
@@ -129,13 +163,13 @@ exports.Args = class Args
       @d.user_path ?= new RegExp("!>CHAR<", 'g')
 
     regexp_string: () ->
-      @regexp_string_data ?= "([^\s])"
+      @regexp_string_data ?= "([^\\s])"
       
-    is: (unk) ->
-      unk.englishy('strip').length == 1
+    is_valid: (unk) ->
+      unk.strip().length == 1
       
     convert: (unk) ->
-      unk.englishy('strip')
+      unk.strip()
 
 
 exports.i_love_u = class i_love_u
@@ -147,11 +181,22 @@ exports.i_love_u = class i_love_u
   
   @read_write_able 'address', 'pattern', 'list', 'procs', 'data'
   @read_able 'code', 'original_code'
+    
+  @add_base_proc: (proc) ->
+    @Base_Procs.push proc
+    @Base_Procs = @Base_Procs.sort (a, b) ->
+      levels = 
+        low: 10
+        medium: 0
+        high: -10
+      a_level = levels[a.priority()]
+      b_level = levels[b.priority()]
+      a_level > b_level
 
   constructor: (str) ->
     @d().original_code = str
     
-    @d().code =  str.englishy('standardize')
+    @d().code =  str.standardize()
     @write 'procs' , [].concat(@constructor.Base_Procs)
     @write 'list'  , []
     
@@ -166,61 +211,53 @@ exports.i_love_u = class i_love_u
   add_to_list: (val) ->
     @list().push val
 
+  is_name_of_data: (k) ->
+    val = v for v in @list() when v.name == k
+    return true if val
+    false
+
   data: ( k ) ->
     if k
       val = v for v in @list when v.name is k
       val.value
     else
       vals = (v for v in @list() when v.hasOwnProperty("name") and v.hasOwnProperty("value") )
-    
-  @add_base_proc: (proc) ->
-    @Base_Procs.push proc
-    @Base_Procs = @Base_Procs.sort (a, b) ->
-      levels = 
-        low: 10
-        medium: 0
-        high: -10
-      a_level = levels[a.priority()]
-      b_level = levels[b.priority()]
-      a_level > b_level
 
   run: () ->
     lines = (new englishy.Englishy @code()).to_array()
     me = this
-    for pair, i in lines
+    @compile_sentence_func ?= (memo, proc) ->
+      proc.run me, memo
       
-      line = pair[0]
-      code_block = pair[1]
+    for line_and_block, i in lines
+      
+      line       = line_and_block[0]
+      code_block = line_and_block[1]
 
       if line and !code_block
-        line = line.englishy('remove_end', 'period')
+        line = line.remove_end('.')
       else if line and code_block
-        line = line.englishy('remove_end', 'colon')
+        line = line.remove_end(':')
         
-      match = false
-      stop  = false
-      current  = line
-      compiled = line
+      line     = line.whitespace_split()
+      match    = false
+      current  = [ line, code_block ]
+      compiled = null
+      sentence_match = true
       
-      while !stop
-        compiled = current
-        
-        for v in @data()
-          r_txt = "(?:^|\\s+)" + RegExp.escape(v.name) + "(?:\\s+|$)"
-          regexp = (new RegExp r_txt, "g")
-          current = current.replace( regexp, " #{v.value} ").englishy('strip')
-          
-        current = @procs().inject current,  (memo, o) ->
-          o.run me, memo, code_block
+      while sentence_match
+        compiled = _.reduce( @procs(), @compile_sentence_func, current )
+        sentence_match = _.isEqual(compiled, current)
+        current = compiled
 
-        stop = (compiled is current)
         
     @list()
   
 exports.Procedure = class Procedure
 
   rw.ize(this)
-  @read_write_able 'priority', 'pattern', 'regexp', 'data', 'list', 'procedure'
+  @read_write_able 'priority', 'pattern', 'data', 'list', 'procedure'
+  @read_able 'args', 'regexp'
 
   constructor: (pattern) ->
     @d().data = {}
@@ -228,19 +265,19 @@ exports.Procedure = class Procedure
     @d().list = []
     @d().priority = 'low'
     
-    args_meta = new Args(pattern.englishy('strip'))
-    @d().regexp = args_meta.regexp()
+    @d().args = new Args(pattern.englishy('strip'))
+    @d().regexp = @args().regexp()
 
-  run: ( env, line, code ) ->
-    captures = RegExp.first_capture(@regexp(), line)
-    return line unless captures
-    @d().data["Args"]         = captures
-    @d().data["Block"]        = code
+  run: ( env, line_n_code ) ->
+    results = @args().compile(env, line_n_code)
+    return line_n_code unless results
+
+    @d().data["Args"]         = results.values
+    @d().data["Block"]        = results.code
     @d().data["Outer-Block"]  = env
     r = @procedure()(this)
-    return line if r and r.ignore_this
-    l = line.replace( captures[0], r.toString() )
-    l
+    return line_n_code if r and r.ignore_this
+    [r.line, r.code]
 
   
 md_num = new Procedure "!>NUM< !>CHAR< !>NUM<"

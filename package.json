@@ -4,8 +4,12 @@
   "description": "Fall in love with computers all over again.",
   "main": "lib/i_love_u.js",
   "dependencies": {
-    "englishy": ">0.2.0",
-    "humane_list": "*"
+    "englishy": ">0.3.0",
+    "humane_list": "*",
+    "array_surgeon": "*",
+    "funcy_perm": "*",
+    "string_da99": ">0.1.1",
+    "underscore": "*"
   },
   "scripts": {
     "test": "mocha"
