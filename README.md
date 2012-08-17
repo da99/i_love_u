@@ -52,7 +52,8 @@ by reading, pacing around, and thinking.
 Do you still hate computers?
 ----------------------------
 
-Try [Squeak](http://www.youtube.com/results?search_query=squeak+etoys&oq=squeak+etoys). 
+Try [learning programming](http://www.khanacademy.org/cs) and 
+use [Squeak](http://www.youtube.com/results?search_query=squeak+etoys&oq=squeak+etoys). 
 
 
 The End
