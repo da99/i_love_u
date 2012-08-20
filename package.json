@@ -7,9 +7,10 @@
     "englishy": ">0.3.0",
     "humane_list": "*",
     "array_surgeon": "*",
-    "funcy_perm": "*",
+    "funcy_perm": ">v0.1.0",
     "string_da99": ">0.1.1",
-    "underscore": "*"
+    "underscore": "*",
+    "rw_ize": "*"
   },
   "scripts": {
     "test": "mocha"
