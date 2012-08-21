@@ -33,9 +33,6 @@ if !RegExp.first_capture
     
 
     
-    
-
-
 exports.i_love_u = class i_love_u
   
   @No_Match = "no_match"
@@ -104,19 +101,19 @@ exports.i_love_u = class i_love_u
         line = line.remove_end(':')
         
       line     = line.whitespace_split()
-      match    = false
       current  = [ line, code_block ]
       compiled = null
-      sentence_match = true
+      matched = true
       
-      while sentence_matched
+      while matched
         compiled = _.reduce( @procs(), @compile_sentence_func, current )
-        sentence_matched = !(_.isEqual(compiled, current))
+        matched = !(_.isEqual(compiled, current))
         current = compiled
         
     @list()
   
-
+    
+    
 md_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
 md_num.write 'priority', 'high'
 md_num.write 'procedure', (env) ->
