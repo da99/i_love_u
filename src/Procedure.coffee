@@ -9,16 +9,17 @@ class Procedure
 
   constructor: (pattern) ->
     @rw_data().data = {}
-    @rw_data().pattern = pattern
+    @rw_data().pattern = pattern.strip()
     @rw_data().list = []
     @rw_data().priority = 'low'
     
-    @rw_data().args_list = new Argument_List pattern.strip()
+    @rw_data().args_list = new Argument_List @pattern()
 
   run: ( env, line_n_code ) ->
     match = @args_list().compile(env, line_n_code)
     return line_n_code if !match or !match.is_a_match
     r = @procedure()(match)
-    [r.line, r.code]
+    return line_n_code unless r
+    [r.line(), r.code()]
 
 module.exports = Procedure

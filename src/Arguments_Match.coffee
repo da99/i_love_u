@@ -24,7 +24,6 @@ class Arguments_Match
     args
 
   @permutate: (env, line_arr, code) ->
-    
     # Permuatate on variables.
     data_pos = ( i for str,i in line_arr when env.is_name_of_data(str) )
 
@@ -68,6 +67,7 @@ class Arguments_Match
         final_line_arr = combo 
         break
 
+    # console.log desc_slice, list[1].is_a_match_with("+") if @list()[1].user_pattern() is "!>CHAR<"
     return null unless final_line_arr
     @rw_data().is_a_match = true
       

@@ -79,10 +79,11 @@ exports.i_love_u = class i_love_u
 
   data: ( k ) ->
     if k
-      val = v for v in @list when v.name is k
+      val = v for v in @list() when v.name is k
       val.value
     else
       vals = (v for v in @list() when v.hasOwnProperty("name") and v.hasOwnProperty("value") )
+      vals
 
   run: () ->
     lines = (new englishy.Englishy @code()).to_array()
@@ -116,39 +117,40 @@ exports.i_love_u = class i_love_u
     
 md_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
 md_num.write 'priority', 'high'
-md_num.write 'procedure', (env) ->
-  m = env.data()['Args'][1]
-  op= env.data()['Args'][2]
-  n = env.data()['Args'][3]
+md_num.write 'procedure', (match) ->
+  m = match.args()[0]
+  op= match.args()[1]
+  n = match.args()[2]
   switch op
     when '*'
       parseFloat(m) * parseFloat(n)
     when '/'
       parseFloat(m) / parseFloat(n)
     else
-      ignore_this: true
+      null
+  match
 
 as_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
-as_num.write 'procedure', (env) ->
-  m = env.data()['Args'][1]
-  op= env.data()['Args'][2]
-  n = env.data()['Args'][3]
+as_num.write 'procedure', (match) ->
+  m = match.args()[0]
+  op= match.args()[1]
+  n = match.args()[2]
   switch op
     when '+'
       parseFloat(m) + parseFloat(n)
     when '-'
       parseFloat(m) - parseFloat(n)
     else
-      ignore_this: true
+      null
+  match
 
   
 word_is_word = new Procedure "!>WORD< is: !>WORD<."
-word_is_word.write 'procedure', (env) ->
-  pair = env.data()['Args']
-  name = pair[1]
-  val  = pair[2]
-  env.data()['Outer-Block'].add_to_data name, val
-  val
+word_is_word.write 'procedure', (match) ->
+  name = _.first match.args() 
+  val  = _.last  match.args()
+  match.env().add_to_data name, val
+  match
      
 
 i_love_u.add_base_proc  as_num

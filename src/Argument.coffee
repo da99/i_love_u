@@ -60,7 +60,7 @@ class Argument
       @regexp_string_data ?= "([\\-]?[0-9\\.]+)"
       
     is_a_match_with: (unk) ->
-      parseFloat(unk) 
+      !isNaN( parseFloat(unk) )
 
     convert: (unk) ->
       parseFloat(unk)
