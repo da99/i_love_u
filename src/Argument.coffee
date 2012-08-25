@@ -1,7 +1,7 @@
 rw = require "rw_ize"
 
 class Argument
-  @type_names: ['WORD', 'NUM', 'CHAR']
+  @type_names: ['WORD', 'NUM', 'CHAR', 'ANY']
   @types: () ->
     @_types_ = (this[t] for t in this.type_names)
   @escaped_end_period: /\\\.$/
@@ -35,6 +35,21 @@ class Argument
     else
       true
 
+  @ANY:
+    d: {}
+    user_pattern: () ->
+      @d.user_pat ?= "!>ANY<"
+    regexp_string: () ->
+      @d.reg_str ?= "([^\\s]+)"
+        
+    is_a_match_with: (unk) ->
+      return false if "#{unk}".is_whitespace()
+      true
+      
+    convert: (unk) ->
+      unk
+      
+
   @WORD: 
     d: {}
     
@@ -45,6 +60,7 @@ class Argument
       @d.reg_str ?= "([a-zA-Z0-9\\.\\_\\-]+)"
         
     is_a_match_with: (unk) ->
+      return false if !unk.is_whitespace 
       return false if unk.is_whitespace()
       !unk.is_whitespace()
       
@@ -74,6 +90,7 @@ class Argument
       @regexp_string_data ?= "([^\\s])"
       
     is_a_match_with: (unk) ->
+      return false if !unk.strip
       unk.strip().length == 1
       
     convert: (unk) ->

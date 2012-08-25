@@ -103,13 +103,23 @@ exports.i_love_u = class i_love_u
         
       line     = line.whitespace_split()
       current  = [ line, code_block ]
-      compiled = null
-      matched = true
+      matched  = true
       
       while matched
-        compiled = _.reduce( @procs(), @compile_sentence_func, current )
-        matched = !(_.isEqual(compiled, current))
-        current = compiled
+        
+        compiled = current
+
+        for proc in @procs()
+          
+
+          matched_to_proc = true
+          
+          while matched_to_proc
+            compiled = @compile_sentence_func(current, proc)
+            matched_to_proc = !_.isEqual(compiled, current)
+            current = compiled
+            
+        matched = ! _.isEqual compiled, current 
         
     @list()
   
@@ -123,11 +133,11 @@ md_num.write 'procedure', (match) ->
   n = match.args()[2]
   switch op
     when '*'
-      parseFloat(m) * parseFloat(n)
+      match.replace( parseFloat(m) * parseFloat(n) )
     when '/'
-      parseFloat(m) / parseFloat(n)
+      match.replace( parseFloat(m) / parseFloat(n) )
     else
-      null
+      match.is_a_match(false)
   match
 
 as_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
@@ -137,19 +147,21 @@ as_num.write 'procedure', (match) ->
   n = match.args()[2]
   switch op
     when '+'
-      parseFloat(m) + parseFloat(n)
+      match.replace( parseFloat(m) + parseFloat(n) )
     when '-'
-      parseFloat(m) - parseFloat(n)
+      match.replace( parseFloat(m) - parseFloat(n) )
     else
-      null
+      match.is_a_match false
+      
   match
 
   
-word_is_word = new Procedure "!>WORD< is: !>WORD<."
+word_is_word = new Procedure "!>WORD< is: !>ANY<."
 word_is_word.write 'procedure', (match) ->
   name = _.first match.args() 
   val  = _.last  match.args()
   match.env().add_to_data name, val
+  match.replace val
   match
      
 

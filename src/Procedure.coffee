@@ -16,10 +16,9 @@ class Procedure
     @rw_data().args_list = new Argument_List @pattern()
 
   run: ( env, line_n_code ) ->
-    match = @args_list().compile(env, line_n_code)
-    return line_n_code if !match or !match.is_a_match
-    r = @procedure()(match)
-    return line_n_code unless r
-    [r.line(), r.code()]
+    
+    match = @args_list().compile(env, line_n_code, @procedure() )
+    return line_n_code if !match or !match.is_a_match()
+    [match.line(), match.code()]
 
 module.exports = Procedure

@@ -20,9 +20,9 @@ class Argument_List
       _.first(@list()).is_start(true)
       _.last(@list()).is_end(true)
       
-  compile: (env, line_n_code) ->
+  compile: (env, line_n_code, proc) ->
     
-    match = new Arguments_Match(this, env, line_n_code)
+    match = new Arguments_Match(this, env, line_n_code, proc)
       
     # If no match, return.
     return null unless match.is_a_match()

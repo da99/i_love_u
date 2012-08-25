@@ -39,7 +39,7 @@ class Arguments_Match
       perms.push clone
     perms
 
-  constructor: (arg_list, env, line_n_code) ->
+  constructor: (arg_list, env, line_n_code, proc) ->
     line = line_n_code[0]
     code = line_n_code[1]
     @rw_data().list = arg_list.list()
@@ -50,31 +50,64 @@ class Arguments_Match
     
     # All possible variable matches.
     perms = @constructor.permutate(env, line, code)
-
-    # Select comb that matches.
-      
     list = @list()
-    find_func = (v, i) ->
-      list[i] && list[i].is_a_match_with(v)
+
+    find_func = (v, i, fi) ->
+      
+      finder = list[fi]
+      return false unless finder
+        
+
+      if finder.is_start()
+        return false if i isnt 0
+
+      if finder.is_end()
+        last_i = perms[0].length - 1
+        return false if i isnt last_i
+
+      finder.is_a_match_with(v)
 
     finders = ( find_func for v in @list() )
 
+    # Select comb that matches.
+    pi = -1 # pi as in perm i
+    limit = perms[0].length - finders.length 
     final_line_arr = null 
-    desc_slice = null
-    for combo, i in perms
-      desc_slice = surgeon(combo).describe_slice(finders)
-      if desc_slice
-        final_line_arr = combo 
-        break
+    desc_slice     = null
+    
+    while !final_line_arr and pi <= limit
+      pi = pi + 1
 
-    # console.log desc_slice, list[1].is_a_match_with("+") if @list()[1].user_pattern() is "!>CHAR<"
-    return null unless final_line_arr
-    @rw_data().is_a_match = true
+      for combo, i in perms
+        desc_slice = surgeon(combo).describe_slice(finders, pi)
+        if desc_slice
+          final_line_arr = combo 
+          break
+
+      if final_line_arr
+        @is_a_match true
+        
+        # Set variable/values as args.
+        @rw_data().line_arr   = final_line_arr
+        @rw_data().slice_desc = desc_slice
+        @rw_data().args       = @constructor.extract_args(this, list)
+        
+        proc(this)
+        if !@is_a_match()
+          final_line_arr = null
       
-    # Set variable/values as args.
-    @rw_data().line_arr   = final_line_arr
-    @rw_data().slice_desc = desc_slice
-    @rw_data().args       = @constructor.extract_args(this, list)
+    return null if !final_line_arr or !@is_a_match()
+    
+
+  replace: ( val ) ->
+    
+    i = @slice_desc().start_index
+    l = @slice_desc().length
+    @line_arr().splice i, l, val
+    @rw_data().line = @line_arr()
+    
+    @line()
+
 
 
 module.exports = Arguments_Match
