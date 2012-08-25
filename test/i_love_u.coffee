@@ -40,10 +40,11 @@ describe "i_love_u", () ->
 
     it "runs partial sentences based on priority", () ->
       u = new_luv """
-        One is: 5 / 5 + 1 - 3 * -10.
+        One is: 1.
+        Thirty_Two is: 5 / 5 + One - 3 * -10.
       """
       u.run()
-      assert.deepEqual stack(u), [32]
+      assert.deepEqual stack(u), ["1", 32]
 
   # it "runs", () ->
     # prog  = """
