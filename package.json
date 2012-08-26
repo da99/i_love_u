@@ -6,7 +6,7 @@
   "dependencies": {
     "englishy": ">0.3.0",
     "humane_list": "*",
-    "array_surgeon": ">0.2.2",
+    "array_surgeon": ">=0.4.0",
     "funcy_perm": ">0.1.0",
     "string_da99": ">0.1.1",
     "underscore": "*",
