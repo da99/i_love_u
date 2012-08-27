@@ -1,4 +1,34 @@
 
+Ponderings Relevant
+-------------------
+"The complexity of the system comes from the aggregation of many simple parts, not from any complex parts."
+-- Henrik Warne [http://henrikwarne.com/2012/08/22/top-5-surprises-when-starting-out-as-a-software-developer/](http://henrikwarne.com/2012/08/22/top-5-surprises-when-starting-out-as-a-software-developer/)
+
+My lack of programming talent proved to be an advantage in 
+industrial design, which I applied to i\_love\_u.
+
+Things That Might Prove Useful
+------------------------------
+"Computationally speaking, each ant has limited capabilities, 
+  but the collective can perform complex tasks."
+"So ant algorithms have to be simple, distributed and scalable – 
+  the very qualities that we need in large engineered distributed systems," 
+she said.
+-- from [http://engineering.stanford.edu/news/stanford-biologist-computer-scientist-discover-anternet](http://engineering.stanford.edu/news/stanford-biologist-computer-scientist-discover-anternet)
+
+"Fools ignore complexity. 
+Pragmatists suffer it. 
+Some can avoid it. 
+Geniuses remove it."
+-- from [http://keithdevens.com/quotes/Perlis.complexity](http://keithdevens.com/quotes/Perlis.complexity).
+
+"I tried to find a technology that does not exist. 
+I could not. They are still making flints. You can buy one
+on ebay for $50. They are still selling parts for steam-powered
+cars. There are more people making swords today than there ever 
+was."
+-- from [http://www.youtube.com/watch?v=J132shgIiuY#t=1540s](http://www.youtube.com/watch?v=J132shgIiuY#t=1540s)
+
 The Building Blocks of i\_love\_u writings.
 -------------------------------------------
 
