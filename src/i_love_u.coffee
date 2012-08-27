@@ -40,7 +40,7 @@ exports.i_love_u = class i_love_u
 
   rw.ize(this)
   
-  @read_write_able 'address', 'pattern', 'list', 'procs', 'data'
+  @read_write_able 'address', 'pattern', 'data', 'procs', 'data'
   @read_able 'code', 'original_code'
     
   @add_base_proc: (proc) ->
@@ -59,7 +59,7 @@ exports.i_love_u = class i_love_u
     
     @rw_data().code =  str.standardize()
     @write 'procs' , [].concat(@constructor.Base_Procs)
-    @write 'list'  , []
+    @_data_ = []
     
   add_to_data: (k, v) ->
     obj = 
@@ -67,22 +67,51 @@ exports.i_love_u = class i_love_u
       value: v
       inherits_from: []
 
-    @list().push obj
+    @_data_.push obj
 
   add_to_list: (val) ->
-    @list().push val
+    @_data_.push val
+
+        
+  @dynamic_data: (args...) ->
+    if args.length is 0
+      @_dynamic_data_
+    else if args.length is 1
+      name = args[0]
+      func = v for k,v of @constructor._dynamic_data_ when name is k or k.test(name)
+      func
+    else if args.length is 2
+      @_dynamic_data_ ?= []
+      @_dynamic_data_.push args[0], args[1]
+    else
+      throw new Error("Unknown args: #{args}")
+    
+  @dynamic_data /^Block_Text_Line_[0-9]+$/, (env, line, block, name) ->
+      if !block
+        throw new Error("Block is not defined.")
+      num = parseInt name.split('_').pop()
+      val = block.text_line( num )
+      new Var(name, val)
+
+  dynamic_data: (line, block, name) ->
+    func = @constructor.dynamic_data(name)[1]
+    func( this, line, block, name )
+          
+  @is_name_of_dynamic_data: (name) ->
+    (not not @dynamic_data(name))
 
   is_name_of_data: (k) ->
-    val = v for v in @list() when v.name == k
-    return true if val
-    false
+    return true if @constructor.is_name_of_dynamic_data(k)
+    
+    val = v for v in @_data_ when v.name == k
+    not not val
 
   data: ( k ) ->
     if k
-      val = v for v in @list() when v.name is k
+      val = v for v in @_data_ when v.name is k
       val.value
     else
-      vals = (v for v in @list() when v.hasOwnProperty("name") and v.hasOwnProperty("value") )
+      vals = (v for v in @_data_ when ("name" of v) and ("value" of v) )
       vals
 
   run: () ->
@@ -121,7 +150,7 @@ exports.i_love_u = class i_love_u
             
         matched = ! _.isEqual compiled, current 
         
-    @list()
+    @data()
   
     
     

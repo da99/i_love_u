@@ -7,6 +7,7 @@ new_luv = (str) ->
 stack = (env) ->
   ( (obj.value) for obj in env.data() )
 
+
 describe "i_love_u", () ->
   
   describe 'constructor()', () ->
@@ -19,9 +20,9 @@ describe "i_love_u", () ->
       l = new_luv("This is origin.")
       assert.equal l.original_code(), "This is origin."
 
-    it "sets .list() to []", () ->
-      l = new_luv("This starts a list.")
-      assert.deepEqual l.list(), []
+    it "sets .data() to []", () ->
+      l = new_luv("This starts a data list.")
+      assert.deepEqual l.data(), []
 
     it ".address is write_able", () ->
       l = new_luv("This is code.")
@@ -30,7 +31,7 @@ describe "i_love_u", () ->
       
   describe 'run()', () ->
     
-    it "saves values to list", () ->
+    it "saves values to data", () ->
       u = new_luv """
         One is: 1.
         Six is: One + 5.
@@ -45,6 +46,32 @@ describe "i_love_u", () ->
       """
       u.run()
       assert.deepEqual stack(u), ["1", 32]
+
+  describe 'special variables for manipulating the block attached to line', () ->
+
+    it "sets Block_Text_Line_1 to first text line of block", () ->
+      str = "I am a \"crazy' string\", ok\"."
+      u = new_luv """
+        Var is: Block_Text_Line_3:
+          I am the first string.
+          I am the second string.
+          #{str}
+          I am the fourth string.
+      """
+
+      u.run()
+      assert.deepEqual stack(u), [str]
+
+    it "sets Block_List_2 to second text line as list", () ->
+      u = new_luv """
+        Var is: Block_List_2:
+          1 1 1 1
+          2 2 2 2
+      """
+
+      u.run()
+      assert.deepEqual stack(u), "2 2 2 2".whitespace_split()
+
 
   # it "runs", () ->
     # prog  = """
@@ -65,7 +92,7 @@ describe "i_love_u", () ->
 
     # u =  new_luv prog
     # u.run()
-    # assert.deepEqual u.list(), ["Super"]
+    # assert.deepEqual u.data(), ["Super"]
       
       
       
