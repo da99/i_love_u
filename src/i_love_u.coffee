@@ -32,6 +32,13 @@ if !RegExp.first_capture
     r.exec(str)
     
 
+class Var
+  rw.ize(this)
+  @read_able "name", "value", "inherits_from"
+  constructor: (n, val) ->
+    @rw_data().name  = n
+    @rw_data().value = val
+    @rw_data().inherits_from = []
     
 exports.i_love_u = class i_love_u
   
@@ -61,28 +68,23 @@ exports.i_love_u = class i_love_u
     @write 'procs' , [].concat(@constructor.Base_Procs)
     @_data_ = []
     
-  add_to_data: (k, v) ->
-    obj = 
-      name: k
-      value: v
-      inherits_from: []
+  add_data: (k, v) ->
+    @_data_.push(new Var(k, v))
 
-    @_data_.push obj
-
-  add_to_list: (val) ->
-    @_data_.push val
-
+  @is_name_of_dynamic_data: (name) ->
+    (not not @dynamic_data(name))
         
   @dynamic_data: (args...) ->
+    @_dynamic_data_ ?= []
+    
     if args.length is 0
       @_dynamic_data_
     else if args.length is 1
       name = args[0]
-      func = v for k,v of @constructor._dynamic_data_ when name is k or k.test(name)
+      func = kv[1] for kv in @_dynamic_data_ when name is kv[0] or kv[0].test(name)
       func
     else if args.length is 2
-      @_dynamic_data_ ?= []
-      @_dynamic_data_.push args[0], args[1]
+      @_dynamic_data_.push [args[0], args[1]]
     else
       throw new Error("Unknown args: #{args}")
     
@@ -91,31 +93,50 @@ exports.i_love_u = class i_love_u
         throw new Error("Block is not defined.")
       num = parseInt name.split('_').pop()
       val = block.text_line( num )
-      new Var(name, val)
+      # new Var(name, val)
+      val
 
-  dynamic_data: (line, block, name) ->
-    func = @constructor.dynamic_data(name)[1]
+  @dynamic_data /^Block_List_[0-9]+$/, (env, line, block, name) ->
+      if !block
+        throw new Error("Block is not defined.")
+      num = parseInt name.split('_').pop()
+      str = block.text_line( num ).strip()
+      tokens = _.flatten( new englishy.Englishy(str + '.').to_tokens() )
+      list = (env.get_if_data(v) for v in tokens)
+      list
+
+  dynamic_data: (name, line, block) ->
+    func = @constructor.dynamic_data(name)
     func( this, line, block, name )
           
-  @is_name_of_dynamic_data: (name) ->
-    (not not @dynamic_data(name))
-
-  is_name_of_data: (k) ->
-    return true if @constructor.is_name_of_dynamic_data(k)
+  is_name_of_dynamic_data: (k) ->
+    @constructor.is_name_of_dynamic_data(k)
     
-    val = v for v in @_data_ when v.name == k
+  is_name_of_data: (k) ->
+    return true if @is_name_of_dynamic_data(k)
+    
+    val = v for v in @_data_ when v.name() == k
     not not val
 
-  data: ( k ) ->
-    if k
-      val = v for v in @_data_ when v.name is k
-      val.value
+  data: ( k, line, block ) ->
+    if @is_name_of_dynamic_data(k)
+      @dynamic_data(k, line, block)
+    else if k
+      val = v for v in @_data_ when v.name() is k
+      val && val.value()
     else
       vals = (v for v in @_data_ when ("name" of v) and ("value" of v) )
       vals
+      @_data_
+      
+  get_if_data: (name) ->
+    if @is_name_of_data(name)
+      @data(name) 
+    else
+      name
 
   run: () ->
-    lines = (new englishy.Englishy @code()).to_array()
+    lines = (new englishy.Englishy @code()).to_tokens()
     me = this
     @compile_sentence_func ?= (memo, proc) ->
       proc.run me, memo
@@ -124,13 +145,6 @@ exports.i_love_u = class i_love_u
       
       line       = line_and_block[0]
       code_block = line_and_block[1]
-
-      if line and !code_block
-        line = line.remove_end('.')
-      else if line and code_block
-        line = line.remove_end(':')
-        
-      line     = line.whitespace_split()
       current  = [ line, code_block ]
       matched  = true
       
@@ -189,7 +203,7 @@ word_is_word = new Procedure "!>WORD< is: !>ANY<."
 word_is_word.write 'procedure', (match) ->
   name = _.first match.args() 
   val  = _.last  match.args()
-  match.env().add_to_data name, val
+  match.env().add_data name, val
   match.replace val
   match
      

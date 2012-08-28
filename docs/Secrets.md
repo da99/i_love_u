@@ -1,4 +1,15 @@
 
+Failure
+-------
+
+"This was a secret of mine, because most of my competitors 
+not only didn't listen to their users, but they didn't even 
+use their own products."
+"You only learn where a product needs improvement through 
+serious long-term use. Users gain that kind of experience, 
+but reviewers and pundits generally do not."
+-- [http://scripting.com/stories/2012/08/28/whatIWantedPartIi.html](http://scripting.com/stories/2012/08/28/whatIWantedPartIi.html)
+
 Learning How to Program
 -----------------------
 

@@ -5,7 +5,8 @@ new_luv = (str) ->
   new luv.i_love_u(str)
 
 stack = (env) ->
-  ( (obj.value) for obj in env.data() )
+  arr = ( obj.value() for obj in env.data() )
+  arr
 
 
 describe "i_love_u", () ->
@@ -49,28 +50,42 @@ describe "i_love_u", () ->
 
   describe 'special variables for manipulating the block attached to line', () ->
 
-    it "sets Block_Text_Line_1 to first text line of block", () ->
-      str = "I am a \"crazy' string\", ok\"."
+    it "sets Block_Text_Line_N to Nth text line of block", () ->
+      str = " I am a \"crazy' string\", ok\"."
       u = new_luv """
-        Var is: Block_Text_Line_3:
+        Str is: Block_Text_Line_3:
+          
           I am the first string.
           I am the second string.
           #{str}
           I am the fourth string.
+            
       """
 
       u.run()
       assert.deepEqual stack(u), [str]
 
-    it "sets Block_List_2 to second text line as list", () ->
+    it "sets Block_List_N to Nth text line as list", () ->
       u = new_luv """
         Var is: Block_List_2:
           1 1 1 1
+          
           2 2 2 2
       """
 
       u.run()
-      assert.deepEqual stack(u), "2 2 2 2".whitespace_split()
+      assert.deepEqual stack(u), ["2 2 2 2".whitespace_split()]
+
+    it "sets Block_List_N to Nth text line as list of tokens", () ->
+      u = new_luv """
+        Var is: Block_List_2:
+          "one 1" "two 1" "three 1" "four 1"
+          
+          "one 2" "two 2" "three 2" "four 2"
+      """
+
+      u.run()
+      assert.deepEqual stack(u), [['"one 2"', '"two 2"', '"three 2"', '"four 2"']]
 
 
   # it "runs", () ->

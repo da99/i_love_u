@@ -35,7 +35,7 @@ class Arguments_Match
       clone = line_arr.slice(0)
       for ind in group
         if ind != -1
-          clone[ind] = env.data(clone[ind])
+          clone[ind] = env.data(clone[ind], line_arr, code)
       perms.push clone
     perms
 
