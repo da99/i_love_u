@@ -32,7 +32,7 @@ if !RegExp.first_capture
     r.exec(str)
     
 
-class Var
+exports.Var = class Var
   rw.ize(this)
   @read_able "name", "value", "inherits_from"
   constructor: (n, val) ->
@@ -47,7 +47,7 @@ exports.i_love_u = class i_love_u
 
   rw.ize(this)
   
-  @read_write_able 'address', 'pattern', 'data', 'procs', 'data'
+  @read_write_able 'address', 'pattern', 'data', 'procs', 'data', 'scope'
   @read_able 'code', 'original_code'
     
   @add_base_proc: (proc) ->
@@ -61,12 +61,15 @@ exports.i_love_u = class i_love_u
       b_level = levels[b.priority()]
       a_level > b_level
 
-  constructor: (str) ->
+  constructor: (str, env) ->
     @rw_data().original_code = str
-    
     @rw_data().code =  str.standardize()
-    @write 'procs' , [].concat(@constructor.Base_Procs)
-    @_data_ = []
+    @write 'scope', []
+    @write 'procs', [].concat(@constructor.Base_Procs)
+    @_data_ = if env
+      env.data()
+    else
+      []
     
   add_data: (k, v) ->
     @_data_.push(new Var(k, v))
@@ -145,7 +148,9 @@ exports.i_love_u = class i_love_u
       
       line       = line_and_block[0]
       code_block = line_and_block[1]
-      current  = [ line, code_block ]
+      orig_pair  = [ line, code_block ]
+      current  = orig_pair
+      compiled = null
       matched  = true
       
       while matched
@@ -153,7 +158,6 @@ exports.i_love_u = class i_love_u
         compiled = current
 
         for proc in @procs()
-          
 
           matched_to_proc = true
           
@@ -163,6 +167,14 @@ exports.i_love_u = class i_love_u
             current = compiled
             
         matched = ! _.isEqual compiled, current 
+
+      if orig_pair.length is compiled.length and _.isEqual(orig_pair, compiled)
+        end = if code_block
+          ":"
+        else
+          "."
+        throw new Error("No match for: #{orig_pair[0].join(" ")}#{end}")
+
         
     @data()
   
@@ -207,7 +219,35 @@ word_is_word.write 'procedure', (match) ->
   match.replace val
   match
      
+if_true = new Procedure "If !>true<:"
+if_true.write 'procedure', (match) ->
+  luv = new i_love_u(match.code().text(), match.env())
+  luv.run()
+  match.replace  true
+  match.env().scope().push true
+  match
 
+if_false = new Procedure "If !>false<:"
+if_false.write 'procedure', (match) ->
+  match.replace  false
+  match.env().scope().push false
+  match
+
+
+else_false = new Procedure "else:"
+else_false.write 'procedure', (match) ->
+  if _.last(match.env().scope()) is false
+    luv = new i_love_u(match.code().text(), match.env())
+    luv.run()
+    match.replace false
+  else
+    match.replace true
+  match
+
+
+i_love_u.add_base_proc  if_true
+i_love_u.add_base_proc  if_false
+i_love_u.add_base_proc  else_false
 i_love_u.add_base_proc  as_num
 i_love_u.add_base_proc  md_num
 i_love_u.add_base_proc  word_is_word

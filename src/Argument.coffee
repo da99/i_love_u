@@ -1,7 +1,7 @@
 rw = require "rw_ize"
 
 class Argument
-  @type_names: ['WORD', 'NUM', 'CHAR', 'ANY']
+  @type_names: ['WORD', 'NUM', 'CHAR', 'ANY', 'true', 'true_or_false', 'false']
   @types: () ->
     @_types_ = (this[t] for t in this.type_names)
   @escaped_end_period: /\\\.$/
@@ -49,7 +49,40 @@ class Argument
     convert: (unk) ->
       unk
       
-
+  @true:
+    d: {}
+    user_pattern: () ->
+      @d.user_pat ?= "!>true<"
+    regexp_string: () ->
+      @d.reg_str ?= "(true)"
+    is_a_match_with: (unk) ->
+      "#{unk}" is "true" 
+    convert: (unk) ->
+      true
+      
+  @false:
+    d: {}
+    user_pattern: () ->
+      @d.user_pat ?= "!>false<"
+    regexp_string: () ->
+      @d.reg_str ?= "(false)"
+    is_a_match_with: (unk) ->
+      "#{unk}" is "false"
+    convert: (unk) ->
+      false
+      
+  @true_or_false:
+    d: {}
+    user_pattern: () ->
+      @d.user_pat ?= "!>true_or_false<"
+    regexp_string: () ->
+      @d.reg_str ?= "(true|false)"
+    is_a_match_with: (unk) ->
+      "#{unk}" is "true" || "#{unk}" is "false"
+    convert: (unk) ->
+      return true if unk is "true"
+      false
+      
   @WORD: 
     d: {}
     

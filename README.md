@@ -25,10 +25,26 @@ Installation and Usage:
       Six is: One + 5.
     """
     u.run()
-    u.list() // Instead of 'stack', I call it a 'list'.
+    vals = (v.value() for v in u.data() ) // Instead of 'stack', I call it a 'list'.
+    vals
     
     # --> ["1", 6.0]
     
+If/else
+------
+
+    u = new love.i_love_u """
+      If true:
+        One is: 1.
+      else:
+        Two is: 2.
+    """
+    u.run()
+    vals = (v.value() for v in u.data() ) 
+    vals
+    
+    # --> ["1"]
+
     
 Commercial Break:
 -----------------

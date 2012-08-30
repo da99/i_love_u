@@ -1,8 +1,8 @@
 luv = require "i_love_u"
 assert = require 'assert'
 
-new_luv = (str) ->
-  new luv.i_love_u(str)
+new_luv = (args...) ->
+  new luv.i_love_u(args...)
 
 stack = (env) ->
   arr = ( obj.value() for obj in env.data() )
@@ -11,7 +11,21 @@ stack = (env) ->
 
 describe "i_love_u", () ->
   
-  describe 'constructor()', () ->
+  describe 'constructor(str, env)', () ->
+
+    it "sets .data() to the same object as original", () ->
+      l = new_luv("One is: 1.")
+      l.run()
+      nl = new_luv("Two is: 2.", l)
+      nl.data().push new luv.Var("Five", 5)
+      
+      assert.deepEqual l.data(), nl.data()
+
+  describe 'constructor(str)', () ->
+
+    it "sets .scope() to []", () ->
+      l = new_luv("This is a new scope.")
+      assert.deepEqual l.scope(), []
 
     it "sets .code() to working copy of code.", () ->
       l = new_luv("This is code.")
@@ -32,6 +46,17 @@ describe "i_love_u", () ->
       
   describe 'run()', () ->
     
+    it "raises an error if no sentence match", () ->
+      u = new_luv """
+        This does not match.
+      """
+      err = null
+      try
+        u.run()
+      catch e
+        err = e
+      assert.equal err.message, "No match for: This does not match."
+
     it "saves values to data", () ->
       u = new_luv """
         One is: 1.
@@ -88,6 +113,28 @@ describe "i_love_u", () ->
       assert.deepEqual stack(u), [['"one 2"', '"two 2"', '"three 2"', '"four 2"']]
 
 
+  describe "if/else", () ->
+
+    it "evals block if true", () ->
+      u = new_luv """
+      If true:
+        One is: 1.
+      else:
+        Two is: 2.
+      """
+      u.run()
+      assert.deepEqual stack(u), ["1"]
+
+    it "evals 'else' block if false", ()->
+      u = new_luv """
+      If false:
+        One is: 1.
+      else:
+        Two is: 2.
+      """
+      u.run()
+      assert.deepEqual stack(u), ["2"]
+      
   # it "runs", () ->
     # prog  = """
       # Superhero is a Noun.
