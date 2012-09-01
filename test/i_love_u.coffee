@@ -83,6 +83,16 @@ describe "i_love_u", () ->
       u.run()
       assert.deepEqual stack(u), ["1", 32]
 
+  describe 'run_tokens(args...)', () ->
+
+    it "evals the tokens as if they were a parsed string.", () ->
+      u = new_luv """
+      One is: 1.
+      """
+      u.run()
+      u.run_tokens(['Two', 'is:', '2'])
+      assert.deepEqual stack(u), ['1','2']
+
   describe 'special variables for manipulating the block attached to line', () ->
 
     it "sets Block_Text_Line_N to Nth text line of block", () ->

@@ -151,45 +151,46 @@ exports.i_love_u = class i_love_u
     else
       name
 
+  run_tokens: (line, code_block) ->
+    orig_pair  = [ line, code_block ]
+    current  = orig_pair
+    compiled = null
+    matched  = true
+    me       = this
+    
+    while matched
+      
+      compiled = current
+
+      for proc in @procs()
+
+        matched_to_proc = true
+        
+        while matched_to_proc
+          compiled = proc.run me, current
+          matched_to_proc = !_.isEqual(compiled, current)
+          current = compiled
+          
+      matched = ! _.isEqual compiled, current 
+
+    the_same = orig_pair.length is compiled.length and _.isEqual(orig_pair, compiled)
+    the_same
+    
+    
   run: () ->
     lines = (new englishy.Englishy @code()).to_tokens()
-    me = this
-    @compile_sentence_func ?= (memo, proc) ->
-      proc.run me, memo
       
     for line_and_block, i in lines
+      the_same = @run_tokens( line_and_block[0], line_and_block[1] )
       
-      line       = line_and_block[0]
-      code_block = line_and_block[1]
-      orig_pair  = [ line, code_block ]
-      current  = orig_pair
-      compiled = null
-      matched  = true
-      
-      while matched
-        
-        compiled = current
-
-        for proc in @procs()
-
-          matched_to_proc = true
-          
-          while matched_to_proc
-            compiled = @compile_sentence_func(current, proc)
-            matched_to_proc = !_.isEqual(compiled, current)
-            current = compiled
-            
-        matched = ! _.isEqual compiled, current 
-
-      if orig_pair.length is compiled.length and _.isEqual(orig_pair, compiled)
-        end = if code_block
+      if the_same
+        end = if line_and_block[1]
           ":"
         else
           "."
-        throw new Error("No match for: #{orig_pair[0].join(" ")}#{end}")
+        throw new Error("No match for: #{line_and_block[0].join(" ")}#{end}")
 
-        
-    @data()
+    true
   
     
     
