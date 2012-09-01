@@ -44,6 +44,16 @@ describe "i_love_u", () ->
       l.write 'address', "/some.address/"
       assert.equal l.address(), "/some.address/"
       
+  describe 'update_data(k,v)', () ->
+
+    it "updates value of given key", () ->
+      u = new_luv """
+        My-Var is: 1.
+      """
+      u.run()
+      u.update_data "My-Var", 2
+      assert.deepEqual stack(u), [2]
+
   describe 'run()', () ->
     
     it "raises an error if no sentence match", () ->

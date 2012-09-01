@@ -34,11 +34,14 @@ if !RegExp.first_capture
 
 exports.Var = class Var
   rw.ize(this)
-  @read_able "name", "value", "inherits_from"
+  @read_able "name", "inherits_from"
+  @read_write_able "value"
+  @read_able_bool "is_a_var"
   constructor: (n, val) ->
     @rw_data().name  = n
     @rw_data().value = val
     @rw_data().inherits_from = []
+    @rw_data().is_a_var = true
     
 exports.i_love_u = class i_love_u
   
@@ -71,9 +74,6 @@ exports.i_love_u = class i_love_u
     else
       []
     
-  add_data: (k, v) ->
-    @_data_.push(new Var(k, v))
-
   @is_name_of_dynamic_data: (name) ->
     (not not @dynamic_data(name))
         
@@ -120,6 +120,19 @@ exports.i_love_u = class i_love_u
     
     val = v for v in @_data_ when v.name() == k
     not not val
+    
+  add_data: (k, v) ->
+    @_data_.push(new Var(k, v))
+
+  update_data: (k, new_v) ->
+    val_i = i for v, i in @_data_ when v.name() is k
+    if isNaN(parseInt(val_i))
+      throw new Error("No data named: #{k}")
+    
+    if new_v.is_a_var
+      @_data_[val_i] = new_v
+    else
+      @_data_[val_i].write "value", new_v
 
   data: ( k, line, block ) ->
     if @is_name_of_dynamic_data(k)
