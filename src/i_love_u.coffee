@@ -6,6 +6,14 @@ _            = require 'underscore'
 rw           = require 'rw_ize'
 Procedure    = require "i_love_u/lib/Procedure"
 
+if !String.prototype.remove_quotes
+  String.prototype.is_ilu = () ->
+    _.first(this) is '"' and  _.last(this) is '"'
+  String.prototype.remove_quotes = () ->
+    if this.is_ilu()
+     return this.replace(/^"/, "").replace(/"$/, "")
+    this
+    
 if !RegExp.escape
   RegExp.escape= (s) ->
     return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
@@ -31,6 +39,43 @@ if !RegExp.first_capture
     vals  = null
     r.exec(str)
     
+comparison_type_cast = (v) ->
+  v = if _.isString(v)
+    if v is "true"
+      true
+    else if v is "false"
+      false
+    else if not _.isNaN(v)
+      parseFloat(v)
+    else
+      v
+  else if _.isNumber(v)
+    v
+  else if _.isBoolean(v)
+    v
+  else
+    throw new Error("Can't convert value into type for comparison: #{v}")
+
+compare = (op, raw_r, raw_l) ->
+  r = comparison_type_cast(raw_r)
+  l = comparison_type_cast(raw_l)
+  ans = switch op
+    when ">"
+      r > l
+    when "<"
+      r < l
+    when ">="
+      r >= l
+    when "<="
+      r <= l
+    when "="
+      r is l
+    when "!="
+      r isnt l
+    else
+      throw new Error("Unknown comparison operation: #{op} for #{r}, #{l}")
+    
+  return ans
 
 exports.Var = class Var
   rw.ize(this)
@@ -50,24 +95,27 @@ exports.i_love_u = class i_love_u
 
   rw.ize(this)
   
-  @read_write_able 'address', 'pattern', 'data', 'procs', 'data', 'scope'
+  @read_write_able 'address', 'pattern', 'data', 'procs', 'data', 'scope', 'loop_total'
   @read_able 'code', 'original_code', 'eval_ed'
     
   @add_base_proc: (proc) ->
     @Base_Procs.push proc
     @Base_Procs = @Base_Procs.sort (a, b) ->
       levels = 
+        before_variables: 30
+        last: 20
         low: 10
         medium: 0
         high: -10
       a_level = levels[a.priority()]
       b_level = levels[b.priority()]
-      a_level > b_level
+      a_level - b_level
 
   constructor: (str, env) ->
     @rw_data().original_code = str
     @rw_data().code =  str.standardize()
     @rw_data().eval_ed = []
+    @rw_data().loop_total = 0
     @write 'scope', []
     @write 'procs', [].concat(@constructor.Base_Procs)
     @_data_ = if env
@@ -180,14 +228,13 @@ exports.i_love_u = class i_love_u
       is_match:      partial_match
       is_full_match: is_full_match
       compiled: current
-    
+      
   run: () ->
     lines = (new englishy.Englishy @code()).to_tokens()
       
     for line_and_block, i in lines
       results = @run_tokens( line_and_block[0], line_and_block[1] )
           
-      
       if not results.is_any_match or not results.is_full_match
         end = if line_and_block[1]
           ":"
@@ -197,7 +244,7 @@ exports.i_love_u = class i_love_u
         if not results.is_match
           throw new Error("No match for: #{line}")
         if not results.is_full_match
-          throw new Error("No full match: #{line} => #{results.compiled[0].join("")}#{end}")
+          throw new Error("No full match: #{line} => #{results.compiled[0].join(" ")}#{end}")
 
       @eval_ed().push results.compiled
 
@@ -243,6 +290,14 @@ word_is_word.write 'procedure', (match) ->
   match.env().add_data name, val
   match.replace val
   match
+
+word_is_now = new Procedure "Update !>WORD< to: !>ANY<."
+word_is_now.write 'procedure', (match) ->
+  name = _.first match.args()
+  val  = _.last  match.args()
+  match.env().update_data name.remove_quotes(), val
+  match.replace val
+  match
      
 if_true = new Procedure "If !>true<:"
 if_true.write 'procedure', (match) ->
@@ -268,15 +323,79 @@ else_false.write 'procedure', (match) ->
   else
     match.replace true
   match
+
+catch_err = ( msg, func ) ->
+  err = null
+  try
+    func()
+  catch e
+    err = e
+  return true if not err
+  if err.message.indexOf(msg) > -1
+    false
+  else
+    throw err
+
+run_comparison_on_match = (op, r, l, match) ->
+  known_type = catch_err "Can't convert value into type for comparison", () ->
+    match.replace( compare(op, r, l) )
+  if known_type
+    match
+  else
+    match.is_a_match(false)
   
-equals = new Procedure "!>ANY< equals !>ANY<"
-equals.write 'priority', 'low'
-equals.write 'procedure', (match) ->
+not_equals = new Procedure "!>ANY< not equal to !>ANY<"
+not_equals.write 'priority', 'last'
+not_equals.write 'procedure', (match) ->
   r = match.args()[0]
   l= match.args()[1]
-  match.replace( r is l )
-  match
+  run_comparison_on_match("!=", r, l, match)
+  
+equals = new Procedure "!>ANY< equals !>ANY<"
+equals.write 'priority', 'last'
+equals.write 'procedure', (match) ->
+  r = match.args()[0]
+  l = match.args()[1]
+  run_comparison_on_match("=", r, l, match)
 
+_while_ = new Procedure "While !>ANY<:"
+_while_.write 'procedure', (match) ->
+  
+  env = match.env()
+  val = match.args()[0]
+  code = match.code().text()
+  tokens = null
+  
+  if val.is_ilu and val.is_ilu()
+    val = val.remove_quotes()
+    tokens = _.flatten( new englishy.Englishy(val + '.').to_tokens() )
+    
+  if not (tokens) and not (val in [true,false])
+    match.is_a_match(false)
+    return match
+
+  re_run = (val) ->
+    ans = if not ( val in [true, false] )
+      bool = env.run_tokens(tokens).compiled[0]
+      # console.log "--", env.data()
+      if not _.isEqual( bool, [true] ) and not _.isEqual( bool, [false] )
+        throw new Error("No match found: #{tokens}")
+      bool[0]
+    else 
+      val
+      
+    return ans
+    
+  while (re_run(val))
+    env.write 'loop_total', env.loop_total() + 1
+    if env.loop_total() > 2123
+      throw new Error("Loop limit excited using: While #{val}")
+    luv = new i_love_u(code, env)
+    luv.run()
+    # console.log luv.data()
+    
+  match.replace true
+  match
 
 
 i_love_u.add_base_proc  if_true
@@ -285,5 +404,8 @@ i_love_u.add_base_proc  else_false
 i_love_u.add_base_proc  as_num
 i_love_u.add_base_proc  md_num
 i_love_u.add_base_proc  word_is_word
+i_love_u.add_base_proc  word_is_now
+i_love_u.add_base_proc  not_equals
 i_love_u.add_base_proc  equals
+i_love_u.add_base_proc  _while_
 

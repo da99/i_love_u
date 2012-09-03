@@ -165,6 +165,19 @@ describe "i_love_u", () ->
       u.run()
       assert.deepEqual stack(u), [true]
       
+
+  describe 'while', () ->
+
+    it "evals block until condition is false", () ->
+      u = new_luv """
+        Number is: 1.
+        While "Number not equal to 3":
+          Update "Number" to: Number + 1.
+      """
+      u.run()
+      assert.deepEqual stack(u), [3]
+
+
       
       
       

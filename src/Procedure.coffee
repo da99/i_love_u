@@ -17,7 +17,7 @@ class Procedure
 
   run: ( env, line_n_code ) ->
     
-    match = @args_list().compile(env, line_n_code, @procedure() )
+    match = @args_list().compile(env, line_n_code, this )
     return null if !match or !match.is_a_match()
     match
 

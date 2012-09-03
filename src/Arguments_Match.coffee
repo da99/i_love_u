@@ -57,7 +57,11 @@ class Arguments_Match
         @is_for_entire_line(true)
       
     # All possible variable matches.
-    perms   = @constructor.permutate(env, line, code)
+    perms = if proc.priority() is "before_variables"
+      [ line ]
+    else
+      @constructor.permutate(env, line, code)
+      
     list    = @list()
     finders = []
 
@@ -104,7 +108,7 @@ class Arguments_Match
         @rw_data().slice_desc = desc_slice
         @rw_data().args       = @constructor.extract_args(this, list)
         
-        proc(this)
+        proc.procedure()(this)
         if !@is_a_match()
           final_line_arr = null
           
