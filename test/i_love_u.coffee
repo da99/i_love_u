@@ -155,6 +155,30 @@ describe "i_love_u", () ->
       u.run()
       assert.deepEqual stack(u), ["2"]
       
+      
+  describe 'x equals y', () ->
+
+    it "has low priority", () ->
+      u = new_luv """
+        Answer is: 1 + 1 + 2 equals 1 + 1 + 1 + 1.
+      """
+      u.run()
+      assert.deepEqual stack(u), [true]
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
   # it "runs", () ->
     # prog  = """
       # Superhero is a Noun.

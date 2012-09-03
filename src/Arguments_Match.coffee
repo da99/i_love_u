@@ -8,7 +8,7 @@ class Arguments_Match
   rw.ize(this)
 
   @read_able "list", "env", "line", "code", "line_arr", "slice_desc", "args"
-  @read_write_able_bool "is_a_match"
+  @read_write_able_bool "is_a_match", "is_full_match", "is_for_entire_line"
 
   @extract_args: (match, list) ->
     start = match.slice_desc().start_index
@@ -50,6 +50,12 @@ class Arguments_Match
     @rw_data().code = code
     @rw_data().args = []
     
+    f = _.first(@list())
+    l = _.last(@list())
+    if f.is_start()
+      if l.is_end() or ( l.is_splat && l.is_splat() )
+        @is_for_entire_line(true)
+      
     # All possible variable matches.
     perms   = @constructor.permutate(env, line, code)
     list    = @list()
@@ -115,6 +121,9 @@ class Arguments_Match
     @line_arr().splice i, l, val
     @rw_data().line = @line_arr()
     
+    if @is_for_entire_line()
+      @is_full_match(true)
+      
     @line()
 
 

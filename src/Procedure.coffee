@@ -18,7 +18,7 @@ class Procedure
   run: ( env, line_n_code ) ->
     
     match = @args_list().compile(env, line_n_code, @procedure() )
-    return line_n_code if !match or !match.is_a_match()
-    [match.line(), match.code()]
+    return null if !match or !match.is_a_match()
+    match
 
 module.exports = Procedure

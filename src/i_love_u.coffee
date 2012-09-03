@@ -51,7 +51,7 @@ exports.i_love_u = class i_love_u
   rw.ize(this)
   
   @read_write_able 'address', 'pattern', 'data', 'procs', 'data', 'scope'
-  @read_able 'code', 'original_code'
+  @read_able 'code', 'original_code', 'eval_ed'
     
   @add_base_proc: (proc) ->
     @Base_Procs.push proc
@@ -67,6 +67,7 @@ exports.i_love_u = class i_love_u
   constructor: (str, env) ->
     @rw_data().original_code = str
     @rw_data().code =  str.standardize()
+    @rw_data().eval_ed = []
     @write 'scope', []
     @write 'procs', [].concat(@constructor.Base_Procs)
     @_data_ = if env
@@ -153,42 +154,52 @@ exports.i_love_u = class i_love_u
 
   run_tokens: (line, code_block) ->
     orig_pair  = [ line, code_block ]
-    current  = orig_pair
-    compiled = null
-    matched  = true
+    current    = orig_pair
+    is_full_match = false
+    partial_match = false
     me       = this
-    
-    while matched
+
+    loop 
       
-      compiled = current
-
+      is_any_match  = false
+      
       for proc in @procs()
+        loop
+          match = proc.run me, current
+          break if not match
+          partial_match = is_any_match = true
+          current = [match.line(), match.code()]
+          if match.is_full_match()
+            is_full_match = true
+            break
+        break if is_full_match
 
-        matched_to_proc = true
-        
-        while matched_to_proc
-          compiled = proc.run me, current
-          matched_to_proc = !_.isEqual(compiled, current)
-          current = compiled
-          
-      matched = ! _.isEqual compiled, current 
-
-    the_same = orig_pair.length is compiled.length and _.isEqual(orig_pair, compiled)
-    the_same
+      break if not is_any_match
     
+    results = 
+      is_match:      partial_match
+      is_full_match: is_full_match
+      compiled: current
     
   run: () ->
     lines = (new englishy.Englishy @code()).to_tokens()
       
     for line_and_block, i in lines
-      the_same = @run_tokens( line_and_block[0], line_and_block[1] )
+      results = @run_tokens( line_and_block[0], line_and_block[1] )
+          
       
-      if the_same
+      if not results.is_any_match or not results.is_full_match
         end = if line_and_block[1]
           ":"
         else
           "."
-        throw new Error("No match for: #{line_and_block[0].join(" ")}#{end}")
+        line = "#{line_and_block[0].join(" ")}#{end}"
+        if not results.is_match
+          throw new Error("No match for: #{line}")
+        if not results.is_full_match
+          throw new Error("No full match: #{line} => #{results.compiled[0].join("")}#{end}")
+
+      @eval_ed().push results.compiled
 
     true
   
@@ -257,6 +268,15 @@ else_false.write 'procedure', (match) ->
   else
     match.replace true
   match
+  
+equals = new Procedure "!>ANY< equals !>ANY<"
+equals.write 'priority', 'low'
+equals.write 'procedure', (match) ->
+  r = match.args()[0]
+  l= match.args()[1]
+  match.replace( r is l )
+  match
+
 
 
 i_love_u.add_base_proc  if_true
@@ -265,5 +285,5 @@ i_love_u.add_base_proc  else_false
 i_love_u.add_base_proc  as_num
 i_love_u.add_base_proc  md_num
 i_love_u.add_base_proc  word_is_word
-
+i_love_u.add_base_proc  equals
 
