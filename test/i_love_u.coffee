@@ -185,11 +185,10 @@ describe "i_love_u", () ->
           Update "Number" to: Number + 1.
       """
       u.write "loop_total", limit - 1
-      err = null
-      try
+      err = try
         u.run()
       catch e
-        err = e
+        e
       assert.equal err.message, "Loop limit exceeded #{limit} using: While Number not equal to 3."
 
 
