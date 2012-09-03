@@ -1,5 +1,6 @@
 luv = require "i_love_u"
 assert = require 'assert'
+limit = 10123
 
 new_luv = (args...) ->
   new luv.i_love_u(args...)
@@ -177,8 +178,7 @@ describe "i_love_u", () ->
       u.run()
       assert.deepEqual stack(u), [3]
 
-    it "does not run past 5123 total loops", () ->
-      limit = 10123
+    it "does not run past #{limit} total loops", () ->
       u = new_luv """
         Number is: 1.
         While "Number not equal to 3":
