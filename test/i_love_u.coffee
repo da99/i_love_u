@@ -177,6 +177,22 @@ describe "i_love_u", () ->
       u.run()
       assert.deepEqual stack(u), [3]
 
+    it "does not run past 5123 total loops", () ->
+      limit = 10123
+      u = new_luv """
+        Number is: 1.
+        While "Number not equal to 3":
+          Update "Number" to: Number + 1.
+      """
+      u.write "loop_total", limit - 1
+      err = null
+      try
+        u.run()
+      catch e
+        err = e
+      assert.equal err.message, "Loop limit exceeded #{limit} using: While Number not equal to 3."
+
+
 
       
       

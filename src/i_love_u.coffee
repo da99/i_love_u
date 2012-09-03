@@ -5,7 +5,7 @@ arr_surgeon  = require 'array_surgeon'
 _            = require 'underscore'
 rw           = require 'rw_ize'
 Procedure    = require "i_love_u/lib/Procedure"
-
+LOOP_LIMIT   = 10123
 if !String.prototype.remove_quotes
   String.prototype.is_ilu = () ->
     _.first(this) is '"' and  _.last(this) is '"'
@@ -115,13 +115,14 @@ exports.i_love_u = class i_love_u
     @rw_data().original_code = str
     @rw_data().code =  str.standardize()
     @rw_data().eval_ed = []
-    @rw_data().loop_total = 0
     @write 'scope', []
     @write 'procs', [].concat(@constructor.Base_Procs)
-    @_data_ = if env
-      env.data()
+    if env
+      @rw_data().loop_total = env.loop_total()
+      @_data_ = env.data()
     else
-      []
+      @rw_data().loop_total = 0
+      @_data_ = []
     
   @is_name_of_dynamic_data: (name) ->
     (not not @dynamic_data(name))
@@ -388,8 +389,8 @@ _while_.write 'procedure', (match) ->
     
   while (re_run(val))
     env.write 'loop_total', env.loop_total() + 1
-    if env.loop_total() > 2123
-      throw new Error("Loop limit excited using: While #{val}")
+    if env.loop_total() > LOOP_LIMIT
+      throw new Error("Loop limit exceeded #{LOOP_LIMIT} using: While #{val}.")
     luv = new i_love_u(code, env)
     luv.run()
     # console.log luv.data()
