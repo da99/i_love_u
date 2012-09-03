@@ -1,6 +1,7 @@
 rw = require "rw_ize"
 funcy_perm = require "funcy_perm"
 surgeon    = require "array_surgeon"
+_          = require "underscore"
 
 class Arguments_Match
 
@@ -12,10 +13,11 @@ class Arguments_Match
   @extract_args: (match, list) ->
     start = match.slice_desc().start_index
     end   = match.slice_desc().end_index
-    slice = match.line_arr().slice start, end
+    slice = match.slice_desc().slice
     args  = []
+    
     if slice.length != list.length
-      throw new Error("Slice does not match list length. Check start and end positions.")
+      throw new Error("Slice does not match list length: #{slice.length} != #{list.length}. Check start and end positions.")
     
     for a, i in list
       if !a.is_plain_text()
@@ -49,34 +51,38 @@ class Arguments_Match
     @rw_data().args = []
     
     # All possible variable matches.
-    perms = @constructor.permutate(env, line, code)
-    list = @list()
+    perms   = @constructor.permutate(env, line, code)
+    list    = @list()
+    finders = []
 
-    find_func = (v, i, fi) ->
-      
-      finder = list[fi]
-      return false unless finder
+    print_it = false
+    
+    for a, a_i in @list()
+      finders.push (v, i, fi) ->
+        arg = list[fi]
+        return false unless arg
+          
+        if !(arg.is_splat && arg.is_splat())
+          if arg.is_start()
+            return false if i isnt 0
+
+          if arg.is_end() 
+            last_i = perms[0].length - 1
+            return false if i isnt last_i
+
+        arg.is_a_match_with(v)
         
+      if a.is_splat and a.is_splat()
+        _.last(finders).is_splat = true
 
-      if finder.is_start()
-        return false if i isnt 0
-
-      if finder.is_end()
-        last_i = perms[0].length - 1
-        return false if i isnt last_i
-
-      finder.is_a_match_with(v)
-
-    finders = ( find_func for v in @list() )
 
     # Select comb that matches.
-    pi = -1 # pi as in perm i
+    pi = 0 # pi as in perm i
     limit = perms[0].length - finders.length 
     final_line_arr = null 
     desc_slice     = null
     
-    while !final_line_arr and pi <= limit
-      pi = pi + 1
+    loop
 
       for combo, i in perms
         desc_slice = surgeon(combo).describe_slice(finders, pi)
@@ -95,6 +101,9 @@ class Arguments_Match
         proc(this)
         if !@is_a_match()
           final_line_arr = null
+          
+      pi += 1
+      break if final_line_arr or (pi >= limit)
       
     return null if !final_line_arr or !@is_a_match()
     

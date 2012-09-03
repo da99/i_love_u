@@ -1,9 +1,8 @@
 rw = require "rw_ize"
 
 class Argument
-  @type_names: ['WORD', 'NUM', 'CHAR', 'ANY', 'true', 'true_or_false', 'false']
   @types: () ->
-    @_types_ = (this[t] for t in this.type_names)
+    @_types_ ?= (this[t] for t in ['splat', 'WORD', 'NUM', 'CHAR', 'ANY', 'true', 'true_or_false', 'false'])
   @escaped_end_period: /\\\.$/
   @regexp_types_used: /\!\>([^\s]+)\</g
   @regexp_any_type: /\!\>[^\s]+\</g
@@ -22,6 +21,10 @@ class Argument
     @write "is_start", false
     @write "is_end",   false
 
+  is_splat: () ->
+    return false if @is_plain_text()
+    ( not not @type().is_splat ) && @type().is_splat()
+
   is_a_match_with: (txt) ->
       
     if @is_plain_text()
@@ -35,12 +38,27 @@ class Argument
     else
       true
 
+  @splat: 
+    
+    is_splat: () ->
+      true
+
+    d: {}
+    
+    user_pattern: () ->
+      @d.user_pat ?= "!>...<"
+      
+    is_a_match_with: (arr) ->
+      arr.length isnt 0
+      
+    convert: (unk) ->
+      unk
+
   @ANY:
     d: {}
+    
     user_pattern: () ->
       @d.user_pat ?= "!>ANY<"
-    regexp_string: () ->
-      @d.reg_str ?= "([^\\s]+)"
         
     is_a_match_with: (unk) ->
       return false if "#{unk}".is_whitespace()
@@ -51,34 +69,37 @@ class Argument
       
   @true:
     d: {}
+    
     user_pattern: () ->
       @d.user_pat ?= "!>true<"
-    regexp_string: () ->
-      @d.reg_str ?= "(true)"
+      
     is_a_match_with: (unk) ->
       "#{unk}" is "true" 
+      
     convert: (unk) ->
       true
       
   @false:
     d: {}
+    
     user_pattern: () ->
       @d.user_pat ?= "!>false<"
-    regexp_string: () ->
-      @d.reg_str ?= "(false)"
+      
     is_a_match_with: (unk) ->
       "#{unk}" is "false"
+      
     convert: (unk) ->
       false
       
   @true_or_false:
     d: {}
+    
     user_pattern: () ->
       @d.user_pat ?= "!>true_or_false<"
-    regexp_string: () ->
-      @d.reg_str ?= "(true|false)"
+      
     is_a_match_with: (unk) ->
       "#{unk}" is "true" || "#{unk}" is "false"
+      
     convert: (unk) ->
       return true if unk is "true"
       false
@@ -89,9 +110,6 @@ class Argument
     user_pattern: () ->
       @d.user_pat ?= "!>WORD<"
       
-    regexp_string: () ->
-      @d.reg_str ?= "([a-zA-Z0-9\\.\\_\\-]+)"
-        
     is_a_match_with: (unk) ->
       return false if !unk.is_whitespace 
       return false if unk.is_whitespace()
@@ -105,9 +123,6 @@ class Argument
     user_pattern: () ->
       @d.user_pat ?= "!>NUM<"
 
-    regexp_string: () ->
-      @regexp_string_data ?= "([\\-]?[0-9\\.]+)"
-      
     is_a_match_with: (unk) ->
       !isNaN( parseFloat(unk) )
 
@@ -119,9 +134,6 @@ class Argument
     user_pattern: () ->
       @d.user_path ?= "!>CHAR<"
 
-    regexp_string: () ->
-      @regexp_string_data ?= "([^\\s])"
-      
     is_a_match_with: (unk) ->
       return false if !unk.strip
       unk.strip().length == 1
