@@ -191,6 +191,17 @@ describe "i_love_u", () ->
         e
       assert.equal err.message, "Loop limit exceeded #{limit} using: While Number not equal to 3."
 
+  describe "do/while", () ->
+
+    it "evals block until condition is false", () ->
+      u = new_luv """
+        Number is: 1.
+        Do:
+          Update "Number" to: Number + 1.
+        While "Number not equal to 4".
+      """
+      u.run()
+      assert.deepEqual stack(u), [4]
 
 
       

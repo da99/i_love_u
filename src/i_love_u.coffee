@@ -359,12 +359,36 @@ equals.write 'procedure', (match) ->
   l = match.args()[1]
   run_comparison_on_match("=", r, l, match)
 
-_while_ = new Procedure "While !>ANY<:"
-_while_.write 'procedure', (match) ->
+_do_ = new Procedure "Do:"
+_do_.write 'procedure', (match) ->
+  code = match.code().text()
+  env  = match.env()
+
+  luv = new i_love_u(code, env)
+  luv.run()
+  match.replace true
+  match.env().scope().push { from_do: true, code: code }
+  match
+
   
+while_loop = new Procedure "While !>ANY<."
+while_loop.write 'procedure', (match) ->
+  env = match.env()
+  prev = _.last(env.scope()) 
+  if prev and prev.from_do
+    code = prev.code
+  else
+    code = match.code() and match.code().text()
+    
+  if not code
+    match.is_a_match(false)
+  else
+    while_loop._while_(match, code )
+
+  
+while_loop._while_ = (match, code) ->
   env = match.env()
   val = match.args()[0]
-  code = match.code().text()
   tokens = null
   
   if val.is_ilu and val.is_ilu()
@@ -378,7 +402,6 @@ _while_.write 'procedure', (match) ->
   re_run = (val) ->
     ans = if not ( val in [true, false] )
       bool = env.run_tokens(tokens).compiled[0]
-      # console.log "--", env.data()
       if not _.isEqual( bool, [true] ) and not _.isEqual( bool, [false] )
         throw new Error("No match found: #{tokens}")
       bool[0]
@@ -393,7 +416,6 @@ _while_.write 'procedure', (match) ->
       throw new Error("Loop limit exceeded #{LOOP_LIMIT} using: While #{val}.")
     luv = new i_love_u(code, env)
     luv.run()
-    # console.log luv.data()
     
   match.replace true
   match
@@ -408,5 +430,6 @@ i_love_u.add_base_proc  word_is_word
 i_love_u.add_base_proc  word_is_now
 i_love_u.add_base_proc  not_equals
 i_love_u.add_base_proc  equals
-i_love_u.add_base_proc  _while_
+i_love_u.add_base_proc  while_loop
+i_love_u.add_base_proc  _do_
 

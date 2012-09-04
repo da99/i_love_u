@@ -50,6 +50,10 @@ class Arguments_Match
     @rw_data().code = code
     @rw_data().args = []
     
+    if arg_list.is_block_required() 
+      if not @code()
+        return null
+      
     f = _.first(@list())
     l = _.last(@list())
     if f.is_start()
