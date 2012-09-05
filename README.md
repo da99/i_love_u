@@ -25,7 +25,7 @@ Installation and Usage:
       Six is: One + 5.
     """
     u.run()
-    vals = (v.value() for v in u.data() ) // Instead of 'stack', I call it a 'list'.
+    vals = (v.value() for v in u.data() ) 
     vals
     
     # --> ["1", 6.0]
