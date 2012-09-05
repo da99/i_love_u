@@ -198,6 +198,12 @@ exports.i_love_u = class i_love_u
     else
       @_data_[val_i].write "value", new_v
 
+  delete_data: (name) ->
+    if not @is_name_of_data(name)
+      throw new Error("Data does not exist: #{name}.") 
+    pos = k for v, k in @_data_ when v.name() is name
+    @_data_.splice pos, 1
+
   data: ( k, line, block ) ->
     if @is_name_of_dynamic_data(k)
       @dynamic_data(k, line, block)

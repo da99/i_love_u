@@ -55,6 +55,31 @@ describe "i_love_u", () ->
       u.update_data "My-Var", 2
       assert.deepEqual stack(u), [2]
 
+  describe 'delete_data(k)', () ->
+
+    it "removes value from data list", () ->
+      u = new_luv """
+        One is: 1.
+        Two is: 2.
+        Three is: 3.
+        Four is: 4.
+        Five is: 5.
+      """
+      u.run()
+      u.delete_data "Four"
+      assert.deepEqual stack(u), ['1','2', '3', '5']
+
+    it "raises error if data does not exist", () ->
+      u = new_luv """
+        My-Var is: 3.
+      """
+      u.run()
+      err = try
+        u.delete_data "My-Vars"
+      catch e
+        e
+      assert.equal err.message, "Data does not exist: My-Vars."
+
   describe 'run()', () ->
     
     it "raises an error if no sentence match", () ->
