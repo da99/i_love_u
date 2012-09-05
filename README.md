@@ -1,4 +1,10 @@
 
+Disclaimer:
+-----------
+
+This is still under development. You can use it for anything practical 
+right now. 
+
 i\_love\_u
 ---------
 
