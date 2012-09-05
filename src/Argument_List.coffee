@@ -25,14 +25,9 @@ class Argument_List
       _.first(@list()).is_start(true)
       _.last(@list()).is_end(true)
       
-  compile: (env, line_n_code, proc) ->
-    
-    match = new Arguments_Match(this, env, line_n_code, proc)
-      
-    # If no match, return.
+  compile: (env, line, proc) ->
+    match = new Arguments_Match(this, env, line, proc)
     return null unless match.is_a_match()
-
-    # Return match obj.
     match
 
 module.exports = Argument_List

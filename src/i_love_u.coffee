@@ -4,6 +4,7 @@ funcy_perm   = require 'funcy_perm'
 arr_surgeon  = require 'array_surgeon'
 _            = require 'underscore'
 rw           = require 'rw_ize'
+Line        = require 'i_love_u/lib/Line'
 Procedure    = require "i_love_u/lib/Procedure"
 LOOP_LIMIT   = 10123
 if !String.prototype.remove_quotes
@@ -39,12 +40,23 @@ if !RegExp.first_capture
     vals  = null
     r.exec(str)
     
+is_boolean_string = (v) ->
+  v in [ 'true', 'false']
+  
+boolean_type_cast = (v) ->
+  
+  if not is_boolean_string(v)
+    throw new Error("Can't be converted to boolean: #{v}")
+  
+  if v is "true"
+    true
+  else 
+    false
+ 
 comparison_type_cast = (v) ->
   v = if _.isString(v)
-    if v is "true"
-      true
-    else if v is "false"
-      false
+    if v is is_boolean_string(v)
+      boolean_type_cast(v)
     else if not _.isNaN(v)
       parseFloat(v)
     else
@@ -68,9 +80,9 @@ compare = (op, raw_r, raw_l) ->
       r >= l
     when "<="
       r <= l
-    when "="
+    when "==="
       r is l
-    when "!="
+    when "!=="
       r isnt l
     else
       throw new Error("Unknown comparison operation: #{op} for #{r}, #{l}")
@@ -112,6 +124,8 @@ exports.i_love_u = class i_love_u
       a_level - b_level
 
   constructor: (str, env) ->
+    if not _.isString(str) 
+      str = str.text()
     @rw_data().original_code = str
     @rw_data().code =  str.standardize()
     @rw_data().eval_ed = []
@@ -201,9 +215,14 @@ exports.i_love_u = class i_love_u
     else
       name
 
-  run_tokens: (line, code_block) ->
-    orig_pair  = [ line, code_block ]
-    current    = orig_pair
+  record_loop: (text) ->
+    @write 'loop_total', @loop_total() + 1
+    if @loop_total() > LOOP_LIMIT
+      throw new Error("Loop limit exceeded #{LOOP_LIMIT} using: #{text}.")
+    @loop_total()
+    
+  run_tokens: (args...) ->
+    line  = new Line( args... ) 
     is_full_match = false
     partial_match = false
     me       = this
@@ -214,10 +233,9 @@ exports.i_love_u = class i_love_u
       
       for proc in @procs()
         loop
-          match = proc.run me, current
+          match = proc.run me, line
           break if not match
           partial_match = is_any_match = true
-          current = [match.line(), match.code()]
           if match.is_full_match()
             is_full_match = true
             break
@@ -228,7 +246,7 @@ exports.i_love_u = class i_love_u
     results = 
       is_match:      partial_match
       is_full_match: is_full_match
-      compiled: current
+      compiled:      line.pair()
       
   run: () ->
     lines = (new englishy.Englishy @code()).to_tokens()
@@ -261,12 +279,12 @@ md_num.write 'procedure', (match) ->
   n = match.args()[2]
   switch op
     when '*'
-      match.replace( parseFloat(m) * parseFloat(n) )
+      parseFloat(m) * parseFloat(n)
     when '/'
-      match.replace( parseFloat(m) / parseFloat(n) )
+      parseFloat(m) / parseFloat(n)
     else
       match.is_a_match(false)
-  match
+  
 
 as_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
 as_num.write 'procedure', (match) ->
@@ -275,55 +293,49 @@ as_num.write 'procedure', (match) ->
   n = match.args()[2]
   switch op
     when '+'
-      match.replace( parseFloat(m) + parseFloat(n) )
+      parseFloat(m) + parseFloat(n)
     when '-'
-      match.replace( parseFloat(m) - parseFloat(n) )
+      parseFloat(m) - parseFloat(n)
     else
       match.is_a_match false
       
-  match
-
   
 word_is_word = new Procedure "!>WORD< is: !>ANY<."
 word_is_word.write 'procedure', (match) ->
   name = _.first match.args() 
   val  = _.last  match.args()
   match.env().add_data name, val
-  match.replace val
-  match
+  val
 
 word_is_now = new Procedure "Update !>WORD< to: !>ANY<."
 word_is_now.write 'procedure', (match) ->
   name = _.first match.args()
   val  = _.last  match.args()
   match.env().update_data name.remove_quotes(), val
-  match.replace val
-  match
+  val
      
-if_true = new Procedure "If !>true<:"
+if_true = new Procedure "If !>true_or_false<:"
 if_true.write 'procedure', (match) ->
-  luv = new i_love_u(match.code().text(), match.env())
-  luv.run()
-  match.replace  true
-  match.env().scope().push true
-  match
-
-if_false = new Procedure "If !>false<:"
-if_false.write 'procedure', (match) ->
-  match.replace  false
-  match.env().scope().push false
-  match
-
+  raw_val = match.args()[0]
+  return match.is_a_match(false) unless is_boolean_string(raw_val)
+  
+  ans = boolean_type_cast(raw_val)
+  if ans is true
+    luv = new i_love_u match.line().code(), match.env()
+    luv.run()
+    
+  match.env().scope().push ans
+  ans
+    
 
 else_false = new Procedure "else:"
 else_false.write 'procedure', (match) ->
   if _.last(match.env().scope()) is false
-    luv = new i_love_u(match.code().text(), match.env())
+    luv = new i_love_u(match.line().code(), match.env())
     luv.run()
-    match.replace false
+    false
   else
-    match.replace true
-  match
+    true
 
 catch_err = ( msg, func ) ->
   err = null
@@ -338,10 +350,13 @@ catch_err = ( msg, func ) ->
     throw err
 
 run_comparison_on_match = (op, r, l, match) ->
+  val = null
+  
   known_type = catch_err "Can't convert value into type for comparison", () ->
-    match.replace( compare(op, r, l) )
+    val = compare(op, r, l)
+    
   if known_type
-    match
+    val
   else
     match.is_a_match(false)
   
@@ -350,79 +365,50 @@ not_equals.write 'priority', 'last'
 not_equals.write 'procedure', (match) ->
   r = match.args()[0]
   l= match.args()[1]
-  run_comparison_on_match("!=", r, l, match)
+  run_comparison_on_match("!==", r, l, match)
   
 equals = new Procedure "!>ANY< equals !>ANY<"
 equals.write 'priority', 'last'
 equals.write 'procedure', (match) ->
   r = match.args()[0]
   l = match.args()[1]
-  run_comparison_on_match("=", r, l, match)
+  run_comparison_on_match("===", r, l, match)
 
 _do_ = new Procedure "Do:"
 _do_.write 'procedure', (match) ->
-  code = match.code().text()
+  code = match.line().code()
   env  = match.env()
 
   luv = new i_love_u(code, env)
   luv.run()
-  match.replace true
   match.env().scope().push { from_do: true, code: code }
-  match
+  true
 
-  
-while_loop = new Procedure "While !>ANY<."
+while_loop = new Procedure "While !>true_or_false<."
 while_loop.write 'procedure', (match) ->
-  env = match.env()
+  env  = match.env()
   prev = _.last(env.scope()) 
-  if prev and prev.from_do
-    code = prev.code
-  else
-    code = match.code() and match.code().text()
-    
-  if not code
-    match.is_a_match(false)
-  else
-    while_loop._while_(match, code )
+  ans  = match.args()[0]
 
+  code = if prev and prev.from_do
+    prev.code
+  else
+    match.line().code() 
+    
+  return match.is_a_match(false) if !code
+    
+  if ans
+    env.record_loop( match.line().origin_line() )
+    (new i_love_u(code, env)).run()
+    env.run_tokens match.line().origin_line(), code 
+    
+  env.scope().push ans
+  ans
   
-while_loop._while_ = (match, code) ->
-  env = match.env()
-  val = match.args()[0]
-  tokens = null
-  
-  if val.is_ilu and val.is_ilu()
-    val = val.remove_quotes()
-    tokens = _.flatten( new englishy.Englishy(val + '.').to_tokens() )
-    
-  if not (tokens) and not (val in [true,false])
-    match.is_a_match(false)
-    return match
-
-  re_run = (val) ->
-    ans = if not ( val in [true, false] )
-      bool = env.run_tokens(tokens).compiled[0]
-      if not _.isEqual( bool, [true] ) and not _.isEqual( bool, [false] )
-        throw new Error("No match found: #{tokens}")
-      bool[0]
-    else 
-      val
-      
-    return ans
-    
-  while (re_run(val))
-    env.write 'loop_total', env.loop_total() + 1
-    if env.loop_total() > LOOP_LIMIT
-      throw new Error("Loop limit exceeded #{LOOP_LIMIT} using: While #{val}.")
-    luv = new i_love_u(code, env)
-    luv.run()
-    
-  match.replace true
-  match
+  # Finish and return.
 
 
 i_love_u.add_base_proc  if_true
-i_love_u.add_base_proc  if_false
 i_love_u.add_base_proc  else_false
 i_love_u.add_base_proc  as_num
 i_love_u.add_base_proc  md_num

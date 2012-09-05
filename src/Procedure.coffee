@@ -8,16 +8,15 @@ class Procedure
   @read_able 'args_list', 'regexp'
 
   constructor: (pattern) ->
-    @rw_data().data = {}
-    @rw_data().pattern = pattern.strip()
-    @rw_data().list = []
-    @rw_data().priority = 'low'
-    
-    @rw_data().args_list = new Argument_List @pattern()
+    @rw_data "data",     {}
+    @rw_data "pattern",  pattern.strip()
+    @rw_data "list",     []
+    @rw_data "priority", 'low'
+    @rw_data "args_list", new Argument_List(@pattern())
 
-  run: ( env, line_n_code ) ->
+  run: ( env, line ) ->
     
-    match = @args_list().compile(env, line_n_code, this )
+    match = @args_list().compile(env, line, this )
     return null if !match or !match.is_a_match()
     match
 
