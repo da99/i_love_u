@@ -1,6 +1,6 @@
 {
   "name": "i_love_u",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Fall in love with computers all over again.",
   "main": "lib/i_love_u.js",
   "dependencies": {
