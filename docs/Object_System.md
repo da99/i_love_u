@@ -42,10 +42,11 @@ Namespacing is used to attach behaviour and protection to data.
       Turn on ignition.
 
 
-
 Each object (humane list w/ attached functionality) has a field
 named `acts_like` that contains the names of the files that holds
-its functionality.  
+its functionality. When an object is retrieved from the datastore, 
+the `acts_like` files are automatically retrieved. They are 
+namespaced/interpreted if not already namespaced/interpreted.
 
 Currently, this does not meet Alan Kay's specifications for OOP. 
 Hopefully, someone will come along and re-design it or the entire `i_love_u`
