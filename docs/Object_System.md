@@ -8,7 +8,7 @@ The object system basically consists of:
 
 Namespacing is used to attach behaviour and protection to data. 
 
-    Merge as "Garage file": okdoki/cars/parking_garage.
+    Merge with "Garage file": okdoki/cars/parking_garage.
     
     My-Summer-Garage is: a new cloned Parking-Garage.
     My-Winter-Garage is: a new cloned Parking-Garage.
