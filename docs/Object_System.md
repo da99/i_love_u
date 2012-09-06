@@ -16,9 +16,10 @@ Namespacing is used to attach behaviour and protection to data.
     Open all garages.
 
     *-> or..
-
-    Refering to "Garage file":
-
+    Refer to "Garage file": Open all garages.
+    
+    *-> or..
+    Refer to "Garage file": 
       Open all garages.
     
     For any Car:
@@ -30,16 +31,14 @@ Namespacing is used to attach behaviour and protection to data.
 
     For My-Car:
 
-      Turn on ignition.
-
       Define clean_car:
         Clean it.
         ...functionality...
 
       Clean it.
+      Turn on ignition.
 
     Treat My-Spouse as a Car:
-
       Turn on ignition.
 
 
