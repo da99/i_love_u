@@ -75,7 +75,7 @@ would be two records:
         Clean it.
         ...other functionality...
    
-This relies on defining functions using the `clean slate/import` approach. 
+This relies on defining functions using the `clean slate/copy & import` approach. 
 There will be no closures which refer to state, only clean slate functions
 with imported from outside environment. There will be no other way to define
 functions because it would be too confusing to have closures and clean slate 
@@ -94,20 +94,24 @@ Each message is an object with properties. Some properties include:
 
 Each message can have before/after/override related functions.
 
-Objects can "defer" to a list of "ancestors" that contain data and functions 
-(ie mixins). The returned values are always get read-only 
-clones of the actual values.
-You never get the actual value because that is up to the object.
+Humane lists, variables, etc. can *not* be saved to the database. Only objects
+that are just a k/v group of functions. There are no propertys.
 
-* Each object that can have decendants will have "before/after init" functions.
-* There can be no data initialized before the initialized process. The following
-is not allowed:
+The following is not allowed:
 
     class Car
       @price = "1000000"
 
       def initialize
         ...
+Each function will have no access to the external environment (ie `clean slate/copy & import`). 
+This will allow any object to be saved to the database as a kv of code representing functions.
+
+*Composition instead of inheritance or prototypes.* Objects 
+have a list of mixins.
+
+The returned values are always get read-only clones of the actual values.
+You never get the actual value because that is up to the object.
 
 
 
