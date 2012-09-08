@@ -53,4 +53,72 @@ Hopefully, someone will come along and re-design it or the entire `i_love_u`
 arch. the right way.
 
 
+Saving Objects to Database.
+===========================
+
+Data is saved as one set of records. 
+Per-object custom functionality 
+is saved as a separate set of records. The following
+would be two records:
+
+    For My-Car:
+
+      Define clean_car:
+        Clean it.
+        Import...
+        ===================
+        ...functionality...
+
+      Define paint_car:
+        Paint it: !>WORD<.
+        ===================
+        Clean it.
+        ...other functionality...
+   
+This relies on defining functions using the `clean slate/import` approach. 
+There will be no closures which refer to state, only clean slate functions
+with imported from outside environment. There will be no other way to define
+functions because it would be too confusing to have closures and clean slate 
+functions for non-programmers.
+
+
+   
+Message Passing (The key to inheritance/prototype architecture.)
+===============
+
+Each message is an object with properties. Some properties include:
+
+* language of the client and/or user.
+* source of message, to deterimine permissions for update or trash.
+* file url of origin of message.
+
+Each message can have before/after/override related functions.
+
+Objects can "defer" to a list of "ancestors" that contain data and functions 
+(ie mixins). The returned values are always get read-only 
+clones of the actual values.
+You never get the actual value because that is up to the object.
+
+* Each object that can have decendants will have "before/after init" functions.
+* There can be no data initialized before the initialized process. The following
+is not allowed:
+
+    class Car
+      @price = "1000000"
+
+      def initialize
+        ...
+
+
+
+
+
+
+
+
+
+
+
+
+
 

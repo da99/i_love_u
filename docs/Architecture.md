@@ -29,6 +29,10 @@ cars. There are more people making swords today than there ever
 was."
 -- from [http://www.youtube.com/watch?v=J132shgIiuY#t=1540s](http://www.youtube.com/watch?v=J132shgIiuY#t=1540s)
 
+"Perhaps that’s another benefit of compiled languages over scripted ones like JavaScript — end users never see the train wreck!"
+-- from [http://www.codeofhonor.com/blog/tough-times-on-the-road-to-starcraft](http://www.codeofhonor.com/blog/tough-times-on-the-road-to-starcraft)
+
+
 The Building Blocks of i\_love\_u writings.
 -------------------------------------------
 
