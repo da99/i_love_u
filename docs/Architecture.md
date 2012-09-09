@@ -36,6 +36,11 @@ was."
 The Building Blocks of i\_love\_u writings.
 -------------------------------------------
 
+* Sentences and sentence fragments.
+* Blocks and block variables.
+* Example:
+    This contains: !>Block_Sentence_Fragment<.
+      ...a new List...
 * Numbers.
 * Strings: These are also code blocks to be parsed and executed.
 * The Humane List: a combination of Array and Hash. 
