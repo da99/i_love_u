@@ -1,39 +1,96 @@
 rw = require "rw_ize"
+_  = require "underscore"
+XRegExp = require('xregexp').XRegExp
 
 class Argument
+  
   @types: () ->
-    @_types_ ?= (this[t] for t in ['splat', 'WORD', 'NUM', 'CHAR', 'ANY', 'true', 'true_or_false', 'false'])
+    @_types_ ?= (this[t] for t in ['splat', 'WORD', 'NUM', 'CHAR', 'ANY', 'Noun', 'true', 'true_or_false', 'false'])
+    
+
   @escaped_end_period: /\\\.$/
   @regexp_types_used: /\!\>([^\s]+)\</g
-  @regexp_any_type: /\!\>[^\s]+\</g
-  @user_pattern_to_type: (txt) ->
+  @regexp_any_type: /(\!\>[^\s]+\<)/g
+  
+  @regexp_capture_any_type:  () ->
+    @_regexp_capture_any_type_ ?=  /(!>[^<]+<)/g 
+    
+  @user_pattern_to_types: (txt) ->
+    me = Argument.user_pattern_to_types
+    if not me.map
+      me.map = {}
+      for t in Argument.types()
+        me.map[ t.user_pattern() ] = t
+    
+    
+    regex = null
     val = t for t in Argument.types() when t.user_pattern() is txt
-    val
+    if val
+      return [regex, [val]]
+    captures = XRegExp.split( txt, Argument.regexp_capture_any_type() )
+    if captures.length is 1 and captures[0] is txt
+      return null
+
+    types = []
+    tokens = []
+    for v in captures
+      if me.map[v]
+        tokens.push( "(.+)" )
+        types.push me.map[v]
+      else
+        tokens.push XRegExp.escape(v)
+        
+    regex = XRegExp.globalize XRegExp( tokens.join("") )
+    [ regex, types ]
+
   
   rw.ize(this)
-  @read_able "user_pattern", "type"
+  @read_able "user_pattern", "first_type", "types", "regex"
   @read_write_able_bool "is_start", "is_end"
   
 
   constructor: (txt) ->
     @rw_data().user_pattern = txt
-    @rw_data().type         = Argument.user_pattern_to_type(txt)
+    regex_and_types = Argument.user_pattern_to_types(txt)
+    if regex_and_types
+      @rw_data().regex        = regex_and_types[0]
+      @rw_data().types        = regex_and_types[1]
+      @rw_data().first_type   = @types()[0]
     @write "is_start", false
     @write "is_end",   false
 
   is_splat: () ->
     return false if @is_plain_text()
-    ( not not @type().is_splat ) && @type().is_splat()
+    ( not not @first_type().is_splat ) && @first_type().is_splat()
 
-  is_a_match_with: (txt) ->
+  extract_args: (txt, env, line) ->
+    if @is_plain_text() 
+      if txt is @user_pattern()
+        return true
+    
+    else if @regex() 
+      raw_args = RegExp.captures( @regex(), txt )
       
-    if @is_plain_text()
-      txt is @user_pattern()
+      if raw_args and raw_args.length isnt 0
+        args = ( env.get_if_data(v, line) for v in raw_args )
+        type_matches = ( @types()[i].is_a_match_with(v) for v, i in args )
+        all_match = _.all type_matches, (v) ->
+          v is true
+          
+        if txt is "My-List:" and @user_pattern() is "!>WORD<:"
+          console.log txt, args, @types()[0].is_a_match_with(args[0])
+
+        if all_match
+          return args
+        
     else
-      @type().is_a_match_with(txt)
+      if @first_type().is_a_match_with(txt)
+        return [txt]
+    
+    null
 
   is_plain_text: () ->
-    if @type()
+    if @first_type()
       false
     else
       true
@@ -129,6 +186,15 @@ class Argument
     convert: (unk) ->
       parseFloat(unk)
       
+  @Noun:
+    d: {}
+    user_pattern: () ->
+      @d.user_pat ?= "!>Noun<"
+    is_a_match_with: (unk) ->
+      not not unk.is_a_noun
+    convert: (unk) ->
+      unk
+
   @CHAR:
     d: {}
     user_pattern: () ->

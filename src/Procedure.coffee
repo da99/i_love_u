@@ -15,6 +15,7 @@ class Procedure
     @rw_data "args_list", new Argument_List(@pattern())
 
   run: ( env, line ) ->
+    this.log_it = true if  @pattern().indexOf('a new') > -1
     
     match = @args_list().compile(env, line, this )
     return null if !match or !match.is_a_match()

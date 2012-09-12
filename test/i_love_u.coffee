@@ -6,7 +6,7 @@ new_luv = (args...) ->
   new luv.i_love_u(args...)
 
 stack = (env) ->
-  arr = ( obj.value() for obj in env.data() )
+  arr = ( obj.value() for obj in env.data() when not ( obj.name() in ['List'] ) )
   arr
 
 
@@ -36,9 +36,10 @@ describe "i_love_u", () ->
       l = new_luv("This is origin.")
       assert.equal l.original_code(), "This is origin."
 
-    it "sets .data() to []", () ->
+    it "sets .data() to ['List']", () ->
       l = new_luv("This starts a data list.")
-      assert.deepEqual l.data(), []
+      data = ( obj.name() for obj in l.data() )
+      assert.deepEqual data, ['List']
 
     it ".address is write_able", () ->
       l = new_luv("This is code.")
@@ -228,6 +229,21 @@ describe "i_love_u", () ->
       u.run()
       assert.deepEqual stack(u), [4]
 
+
+  describe "for each as x in !>list<", () ->
+
+    it "creates x as a variable", () ->
+      u = new_luv """
+        My-List is: a new List.
+        Insert at the top of My-List: 1.
+        Insert at the top of My-List: 2.
+        Insert at the top of My-List: 3.
+        Nums is: a new List.
+        For each as x in My-List:
+          Insert at the bottom of Nums: x.
+      """
+      u.run()
+      assert.deepEqual stack(u), [['3','2','1'], ['1','2','3']]
 
       
       

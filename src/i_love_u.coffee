@@ -3,10 +3,14 @@ string_da99  = require 'string_da99'
 funcy_perm   = require 'funcy_perm'
 arr_surgeon  = require 'array_surgeon'
 _            = require 'underscore'
+cloneextend  = require "cloneextend"
 rw           = require 'rw_ize'
-Line        = require 'i_love_u/lib/Line'
+humane_list  = require 'humane_list'
+XRegExp      = require('xregexp' ).XRegExp
+Line         = require 'i_love_u/lib/Line'
 Procedure    = require "i_love_u/lib/Procedure"
 LOOP_LIMIT   = 10123
+
 if !String.prototype.remove_quotes
   String.prototype.is_ilu = () ->
     _.first(this) is '"' and  _.last(this) is '"'
@@ -14,23 +18,19 @@ if !String.prototype.remove_quotes
     if this.is_ilu()
      return this.replace(/^"/, "").replace(/"$/, "")
     this
-    
-if !RegExp.escape
-  RegExp.escape= (s) ->
-    return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
   
 if !RegExp.captures
   RegExp.captures= ( r, str ) ->
     r.lastIndex = 0
     match = null
-    vals  = null
-    runs  = 0
-    while (match = r.exec(str))
-      if runs > 10 and r.lastIndex is 0
-        throw new Error("/g flag is not set: #{r}")
-      vals ?= []
-      vals.push match
-      runs += 1
+    vals  = []
+    pos   = 0
+    while (match = XRegExp.exec( str, r, pos, 'sticky') )
+      pos = match.index + match[0].length
+      match.shift()
+      ( vals.push(v) for v in match )
+      
+    return null if vals.length is 0 
     vals
 
 if !RegExp.first_capture
@@ -104,12 +104,16 @@ exports.i_love_u = class i_love_u
   
   @No_Match = "no_match"
   @Base_Procs = []
+  @Base_Data  = []
 
   rw.ize(this)
   
   @read_write_able 'address', 'pattern', 'data', 'procs', 'data', 'scope', 'loop_total'
   @read_able 'code', 'original_code', 'eval_ed'
     
+  @add_base_data: (name, val) ->
+    @Base_Data.push [name, val]
+
   @add_base_proc: (proc) ->
     @Base_Procs.push proc
     @Base_Procs = @Base_Procs.sort (a, b) ->
@@ -131,12 +135,16 @@ exports.i_love_u = class i_love_u
     @rw_data().eval_ed = []
     @write 'scope', []
     @write 'procs', [].concat(@constructor.Base_Procs)
+      
     if env
       @rw_data().loop_total = env.loop_total()
       @_data_ = env.data()
     else
       @rw_data().loop_total = 0
       @_data_ = []
+      
+      for pair in @constructor.Base_Data
+        @add_data( pair... )
     
   @is_name_of_dynamic_data: (name) ->
     (not not @dynamic_data(name))
@@ -155,26 +163,26 @@ exports.i_love_u = class i_love_u
     else
       throw new Error("Unknown args: #{args}")
     
-  @dynamic_data /^Block_Text_Line_[0-9]+$/, (env, line, block, name) ->
-      if !block
-        throw new Error("Block is not defined.")
-      num = parseInt name.split('_').pop()
-      val = block.text_line( num )
-      # new Var(name, val)
-      val
+  @dynamic_data /^Block_Text_Line_[0-9]+$/, (name, env, line) ->
+    block = line.block()
+    if !block
+      throw new Error("Block is not defined.")
+    num = parseInt name.split('_').pop()
+    val = block.text_line( num )
 
-  @dynamic_data /^Block_List_[0-9]+$/, (env, line, block, name) ->
-      if !block
-        throw new Error("Block is not defined.")
-      num = parseInt name.split('_').pop()
-      str = block.text_line( num ).strip()
-      tokens = _.flatten( new englishy.Englishy(str + '.').to_tokens() )
-      list = (env.get_if_data(v) for v in tokens)
-      list
+  @dynamic_data /^Block_List_[0-9]+$/, (name, env, line) ->
+    block = line.block()
+    if !block
+      throw new Error("Block is not defined.")
+    num = parseInt name.split('_').pop()
+    str = block.text_line( num ).strip()
+    tokens = _.flatten( new englishy.Englishy(str + '.').to_tokens() )
+    list = (env.get_if_data(v, line) for v in tokens)
+    list
 
-  dynamic_data: (name, line, block) ->
+  dynamic_data: (name, line) ->
     func = @constructor.dynamic_data(name)
-    func( this, line, block, name )
+    func( name, this, line )
           
   is_name_of_dynamic_data: (k) ->
     @constructor.is_name_of_dynamic_data(k)
@@ -204,9 +212,9 @@ exports.i_love_u = class i_love_u
     pos = k for v, k in @_data_ when v.name() is name
     @_data_.splice pos, 1
 
-  data: ( k, line, block ) ->
+  data: ( k, line ) ->
     if @is_name_of_dynamic_data(k)
-      @dynamic_data(k, line, block)
+      @dynamic_data(k, line)
     else if k
       val = v for v in @_data_ when v.name() is k
       val && val.value()
@@ -215,9 +223,11 @@ exports.i_love_u = class i_love_u
       vals
       @_data_
       
-  get_if_data: (name) ->
-    if @is_name_of_data(name)
-      @data(name) 
+  get_if_data: (name, line) ->
+    if not line
+      throw new Error "Line is required."
+    if @is_name_of_data(name, line)
+      @data name, line
     else
       name
 
@@ -275,6 +285,8 @@ exports.i_love_u = class i_love_u
 
     true
   
+
+# Add basic Nouns:
     
     
 md_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
@@ -313,8 +325,24 @@ word_is_word.write 'procedure', (match) ->
   match.env().add_data name, val
   val
 
-word_is_now = new Procedure "Update !>WORD< to: !>ANY<."
-word_is_now.write 'procedure', (match) ->
+clone_list = new Procedure "a clone of !>List<"
+clone_list.write "priority", "high"
+clone_list.write 'procedure', (match) ->
+  list = _.first match.args()
+  env  = match.env()
+  $.extend(true, {}, clone)
+
+derive_list = new Procedure "a derivative of !>List<"
+derive_list.write "priority", "high"
+derive_list.write "procedure", (match) ->
+  list = _.first match.args()
+  env  = match.env()
+  new list()
+
+
+
+update_word = new Procedure "Update !>WORD< to: !>ANY<."
+update_word.write 'procedure', (match) ->
   name = _.first match.args()
   val  = _.last  match.args()
   match.env().update_data name.remove_quotes(), val
@@ -327,7 +355,7 @@ if_true.write 'procedure', (match) ->
   
   ans = boolean_type_cast(raw_val)
   if ans is true
-    luv = new i_love_u match.line().code(), match.env()
+    luv = new i_love_u match.line().block(), match.env()
     luv.run()
     
   match.env().scope().push ans
@@ -337,7 +365,7 @@ if_true.write 'procedure', (match) ->
 else_false = new Procedure "else:"
 else_false.write 'procedure', (match) ->
   if _.last(match.env().scope()) is false
-    luv = new i_love_u(match.line().code(), match.env())
+    luv = new i_love_u(match.line().block(), match.env())
     luv.run()
     false
   else
@@ -382,12 +410,12 @@ equals.write 'procedure', (match) ->
 
 _do_ = new Procedure "Do:"
 _do_.write 'procedure', (match) ->
-  code = match.line().code()
+  block = match.line().block()
   env  = match.env()
 
-  luv = new i_love_u(code, env)
+  luv = new i_love_u(block, env)
   luv.run()
-  match.env().scope().push { from_do: true, code: code }
+  match.env().scope().push { from_do: true, block: block }
   true
 
 while_loop = new Procedure "While !>true_or_false<."
@@ -396,32 +424,80 @@ while_loop.write 'procedure', (match) ->
   prev = _.last(env.scope()) 
   ans  = match.args()[0]
 
-  code = if prev and prev.from_do
-    prev.code
+  block = if prev and prev.from_do
+    prev.block
   else
-    match.line().code() 
+    match.line().block() 
     
-  return match.is_a_match(false) if !code
+  return match.is_a_match(false) if !block
     
   if ans
     env.record_loop( match.line().origin_line() )
-    (new i_love_u(code, env)).run()
-    env.run_tokens match.line().origin_line(), code 
+    (new i_love_u(block, env)).run()
+    env.run_tokens match.line().origin_line(), block 
     
   env.scope().push ans
   ans
   
-  # Finish and return.
+a_new_noun = new Procedure "a new !>WORD<"
+a_new_noun.write 'procedure', (match) ->
+  env = match.env()
+  noun_name = match.args()[0]
+  if not env.is_name_of_data(noun_name)
+    return match.is_a_match(false)
+  else
+    noun = env.data(noun_name)
+    cloneextend.clone(noun)
 
+insert_into_list = new Procedure "Insert at the !>WORD< of !>Noun<: !>ANY<."
+insert_into_list.write 'procedure', (match) ->
+  env = match.env()
+  pos  = match.args()[0]
+  list = match.args()[1]
+  val  = match.args()[2]
+  if not list.insert or not (pos in ['top', 'bottom'])
+    return match.is_a_match(false)
+  else
+    list.insert pos, val
 
 i_love_u.add_base_proc  if_true
 i_love_u.add_base_proc  else_false
 i_love_u.add_base_proc  as_num
 i_love_u.add_base_proc  md_num
+
 i_love_u.add_base_proc  word_is_word
-i_love_u.add_base_proc  word_is_now
+i_love_u.add_base_proc  update_word
+
+i_love_u.add_base_proc  clone_list
+i_love_u.add_base_proc  derive_list
+
 i_love_u.add_base_proc  not_equals
 i_love_u.add_base_proc  equals
 i_love_u.add_base_proc  while_loop
 i_love_u.add_base_proc  _do_
+i_love_u.add_base_proc  a_new_noun
+i_love_u.add_base_proc  insert_into_list
+
+list_noun = 
+  
+  is_a_noun: () ->
+    true
+    
+  target: () ->
+    @_target_ ?= new humane_list()
+    
+  insert: (raw_pos, val) ->
+    pos = if raw_pos is "top"
+      "front"
+    else
+      "end"
+    @target().push( pos, val )
+
+  values: () ->
+    @target().values()
+
+  
+i_love_u.add_base_data "List", list_noun
+
+
 

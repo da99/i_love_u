@@ -3,37 +3,37 @@ _  = require "underscore"
 class Line
 
   rw.ize this
-  @read_able "origin_line", "origin_code" 
-  @read_write_able "line", "code" 
+  @read_able "origin_line", "origin_block" 
+  @read_write_able "line", "block" 
 
-  constructor: (line, code) ->
+  constructor: (line, block) ->
     @rw_data "origin_line", line
-    @rw_data "origin_code", code
+    @rw_data "origin_block", block
     @write "line", line
-    @write "code", code
+    @write "block", block
 
 
-  code_text: () ->
-    @code() && @code().text()
+  block_text: () ->
+    @block() && @block().text()
 
-  origin_code_text: () ->
-    @origin_code() && @origin_code().text()
+  origin_block_text: () ->
+    @origin_block() && @origin_block().text()
 
   is_equal_to: ( line ) ->
-    _.isEqual( @line(), line.line() ) && _.isEqual( @code_text(), line.code_text() )
+    _.isEqual( @line(), line.line() ) && _.isEqual( @block_text(), line.block_text() )
 
   has_changed: () ->
-    _.isEqual( @origin_line(), @line() ) && _.isEqual( @origin_code_text(), @code_text() )
+    _.isEqual( @origin_line(), @line() ) && _.isEqual( @origin_block_text(), @block_text() )
 
   pair: () ->
-    if @code()
-      [ @line(), @code() ]
+    if @block()
+      [ @line(), @block() ]
     else
       [ @line() ]
 
   origin_pair: () ->
-    if @origin_code()
-      [ @origin_line(), @origin_code() ]
+    if @origin_block()
+      [ @origin_line(), @origin_block() ]
     else
       [ @origin_line() ]
 

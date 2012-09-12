@@ -27,7 +27,7 @@ class Arguments_Match
 
   @permutate: (env, line) ->
     line_arr = line.line()
-    code     = line.code()
+    block    = line.block()
     # Permuatate on variables.
     data_pos = ( i for str,i in line_arr when env.is_name_of_data(str) )
 
@@ -39,18 +39,19 @@ class Arguments_Match
       clone = line_arr.slice(0)
       for ind in group
         if ind != -1
-          clone[ind] = env.data(clone[ind], line_arr, code)
+          clone[ind] = env.data(clone[ind], line)
       perms.push clone
     perms
 
   constructor: (arg_list, env, line, proc) ->
+
     @rw_data "list",  arg_list.list()
     @rw_data "env",  env
     @rw_data "line",  line
     @rw_data "args",  []
     
     if arg_list.is_block_required() 
-      if not @line().code()
+      if not @line().block()
         return null
       
     f = _.first(@list())
@@ -69,9 +70,11 @@ class Arguments_Match
     finders = []
 
     print_it = false
+    args = []
     
     for a, a_i in @list()
       finders.push (v, i, fi) ->
+        
         arg = list[fi]
         return false unless arg
           
@@ -83,13 +86,21 @@ class Arguments_Match
             last_i = perms[0].length - 1
             return false if i isnt last_i
 
-        arg.is_a_match_with(v)
+        extracted = arg.extract_args(v, env, line)
+        
+        if not extracted
+          args = []
+          return false 
+          
+        if extracted.length
+          args.splice args.length, 0, extracted...
+        
+        true
         
       if a.is_splat and a.is_splat()
         _.last(finders).is_splat = true
 
-
-    # Select comb that matches.
+    # Select combo that matches.
     pi             = 0 # pi as in perm i
     limit          = perms[0].length - finders.length 
     final_line_arr = null 
@@ -98,6 +109,7 @@ class Arguments_Match
     loop
 
       for combo, i in perms
+        args = []
         desc_slice = surgeon(combo).describe_slice(finders, pi)
         if desc_slice
           final_line_arr = combo 
@@ -109,7 +121,7 @@ class Arguments_Match
         # Set variable/values as args.
         @rw_data "new_line",    final_line_arr
         @rw_data "slice_desc",  desc_slice
-        @rw_data "args",        @constructor.extract_args(this, list)
+        @rw_data "args",        args
         
         result = proc.procedure()(this)
         if @is_a_match()
