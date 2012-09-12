@@ -10,6 +10,7 @@
     "funcy_perm": ">0.1.0",
     "string_da99": ">0.1.1",
     "underscore": "*",
+    "cheerio": "*",
     "rw_ize": ">0.1.1"
   },
   "scripts": {
