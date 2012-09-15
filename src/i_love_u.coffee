@@ -9,6 +9,7 @@ humane_list  = require 'humane_list'
 XRegExp      = require('xregexp' ).XRegExp
 Line         = require 'i_love_u/lib/Line'
 Procedure    = require "i_love_u/lib/Procedure"
+Arguments_Match = require "i_love_u/lib/Arguments_Match"
 LOOP_LIMIT   = 10123
 
 if !RegExp.captures
@@ -244,8 +245,8 @@ exports.i_love_u = class i_love_u
       
       for proc in @procs()
         loop
-          match = proc.run me, line
-          break if not match
+          match = new Arguments_Match(this, line, proc)
+          break if not match.is_a_match()
             
           partial_match = is_any_match = true
           if match.is_full_match()
@@ -273,6 +274,7 @@ exports.i_love_u = class i_love_u
           ":"
         else
           "."
+        
         line = "#{englishy.Stringy.to_strings(line_and_block[0]).join(" ")}#{end}"
         if not results.is_match
           throw new Error("No match for: #{line}")
@@ -437,15 +439,11 @@ while_loop.write 'procedure', (match) ->
   env.scope().push ans
   ans
   
-a_new_noun = new Procedure "a new !>WORD<"
+a_new_noun = new Procedure "a new !>Noun<"
 a_new_noun.write 'procedure', (match) ->
   env = match.env()
-  noun_name = match.args()[0]
-  if not env.is_name_of_data(noun_name)
-    return match.is_a_match(false)
-  else
-    noun = env.data(noun_name)
-    cloneextend.clone(noun)
+  noun = match.args()[0]
+  cloneextend.clone(noun)
 
 insert_into_list = new Procedure "Insert at the !>WORD< of !>Noun<: !>ANY<."
 insert_into_list.write 'procedure', (match) ->
@@ -453,10 +451,12 @@ insert_into_list.write 'procedure', (match) ->
   pos  = match.args()[0]
   list = match.args()[1]
   val  = match.args()[2]
+  
   if not list.insert or not (pos in ['top', 'bottom'])
     return match.is_a_match(false)
   else
     list.insert pos, val
+    val
 
 top_bottom = new Procedure "!>Noun<, from top to bottom as !>WORD<:"
 top_bottom.write 'procedure', (match) ->

@@ -76,7 +76,7 @@ class Argument
       txt
     else
       ctxt
-        
+      
     if @regex() 
       origin_args  = []
       args         = []
@@ -85,9 +85,10 @@ class Argument
       captures     = RegExp.captures( @regex(), txt ) 
       
       return null unless captures
+      
       for raw_s in captures
         i += 1
-        s = (new ep.Stringy(raw_s)) 
+        s = (new englishy.Stringy(raw_s)) 
         origin_args.push   s.value()
         
         compiled_arg = if s.is_quoted()
@@ -99,7 +100,7 @@ class Argument
         break if mismatch
         args.push compiled_arg
 
-      return null if mismatch or _.isEmpty args.length
+      return null if mismatch or _.isEmpty args
       return [ args, origin_args ]
         
     else if @is_plain_text() 
@@ -107,7 +108,6 @@ class Argument
         return true
 
     else if @types().length is 1
-        
       if @first_type().is_a_match_with(target)
         return [ [target], [target] ]
     
@@ -212,10 +212,13 @@ class Argument
       
   @Noun:
     d: {}
+    
     user_pattern: () ->
       @d.user_pat ?= "!>Noun<"
+      
     is_a_match_with: (unk) ->
-      not not unk.is_a_noun
+      unk.is_a_noun and unk.is_a_noun()
+      
     convert: (unk) ->
       unk
 

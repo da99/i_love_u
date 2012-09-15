@@ -25,15 +25,14 @@ class Arguments_Match
 
     args
 
-  constructor: (arg_list, env, line, proc) ->
-    
-    @rw_data "list",  arg_list.list()
+  constructor: (env, line, proc) ->
+    @rw_data "list",  proc.args_list().list()
     @rw_data "env",   env
     @rw_data "line",  line
     @rw_data "args",  []
     @rw_data "origin_args",  []
     
-    if arg_list.is_block_required() 
+    if proc.args_list().is_block_required() 
       if not @line().block()
         return null
       
@@ -70,7 +69,7 @@ class Arguments_Match
             return false if i isnt last_i
 
         extracted = arg.extract_args(v, env, line)
-        
+    
         if not extracted
           args = []
           origin_args = []
