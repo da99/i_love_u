@@ -2,13 +2,9 @@ luv = require "i_love_u"
 assert = require 'assert'
 limit = 10123
 
-new_luv = (args...) ->
-  new luv.i_love_u(args...)
-
-stack = (env) ->
-  arr = ( obj.value() for obj in env.data() when not ( obj.name() in ['List'] ) )
-  arr
-
+helper = require "i_love_u/lib/test/helper"
+new_luv = helper.new_luv
+stack   = helper.stack
 
 describe "i_love_u", () ->
   
@@ -157,7 +153,7 @@ describe "i_love_u", () ->
       """
 
       u.run()
-      assert.deepEqual stack(u), [['"one 2"', '"two 2"', '"three 2"', '"four 2"']]
+      assert.deepEqual stack(u), [['one 2', 'two 2', 'three 2', 'four 2']]
 
 
   describe "if/else", () ->
@@ -215,7 +211,7 @@ describe "i_love_u", () ->
         u.run()
       catch e
         e
-      assert.equal err.message, "Loop limit exceeded #{limit} using: While,Number,not,equal,to,3."
+      assert.equal err.message, "Loop limit exceeded #{limit} using: While Number not equal to 3."
 
   describe "do/while", () ->
 
@@ -230,7 +226,7 @@ describe "i_love_u", () ->
       assert.deepEqual stack(u), [4]
 
 
-  describe "for each as x in !>list<", () ->
+  describe "!>Noun<, from top to bottom as x:", () ->
 
     it "creates x as a variable", () ->
       u = new_luv """
@@ -239,8 +235,8 @@ describe "i_love_u", () ->
         Insert at the top of My-List: 2.
         Insert at the top of My-List: 3.
         Nums is: a new List.
-        For each as x in My-List:
-          Insert at the bottom of Nums: x.
+        My-List, from top to bottom as x-pos: 
+          Insert at the bottom of Nums: the value of x-pos.
       """
       u.run()
       assert.deepEqual stack(u), [['3','2','1'], ['1','2','3']]

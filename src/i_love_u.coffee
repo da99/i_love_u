@@ -11,14 +11,6 @@ Line         = require 'i_love_u/lib/Line'
 Procedure    = require "i_love_u/lib/Procedure"
 LOOP_LIMIT   = 10123
 
-if !String.prototype.remove_quotes
-  String.prototype.is_ilu = () ->
-    _.first(this) is '"' and  _.last(this) is '"'
-  String.prototype.remove_quotes = () ->
-    if this.is_ilu()
-     return this.replace(/^"/, "").replace(/"$/, "")
-    this
-  
 if !RegExp.captures
   RegExp.captures= ( r, str ) ->
     r.lastIndex = 0
@@ -118,7 +110,6 @@ exports.i_love_u = class i_love_u
     @Base_Procs.push proc
     @Base_Procs = @Base_Procs.sort (a, b) ->
       levels = 
-        before_variables: 30
         last: 20
         low: 10
         medium: 0
@@ -177,7 +168,12 @@ exports.i_love_u = class i_love_u
     num = parseInt name.split('_').pop()
     str = block.text_line( num ).strip()
     tokens = _.flatten( new englishy.Englishy(str + '.').to_tokens() )
-    list = (env.get_if_data(v, line) for v in tokens)
+    list = []
+    for v in tokens
+      if v.is_quoted()
+        list.push v.value()
+      else
+        list.push env.get_if_data(v.value(), line)
     list
 
   dynamic_data: (name, line) ->
@@ -244,19 +240,21 @@ exports.i_love_u = class i_love_u
     me       = this
 
     loop 
-      
       is_any_match  = false
       
       for proc in @procs()
         loop
           match = proc.run me, line
           break if not match
+            
           partial_match = is_any_match = true
           if match.is_full_match()
             is_full_match = true
             break
+          
         break if is_full_match
-
+        
+      break if is_full_match
       break if not is_any_match
     
     results = 
@@ -275,7 +273,7 @@ exports.i_love_u = class i_love_u
           ":"
         else
           "."
-        line = "#{line_and_block[0].join(" ")}#{end}"
+        line = "#{englishy.Stringy.to_strings(line_and_block[0]).join(" ")}#{end}"
         if not results.is_match
           throw new Error("No match for: #{line}")
         if not results.is_full_match
@@ -345,7 +343,7 @@ update_word = new Procedure "Update !>WORD< to: !>ANY<."
 update_word.write 'procedure', (match) ->
   name = _.first match.args()
   val  = _.last  match.args()
-  match.env().update_data name.remove_quotes(), val
+  match.env().update_data name, val
   val
      
 if_true = new Procedure "If !>true_or_false<:"
@@ -432,7 +430,7 @@ while_loop.write 'procedure', (match) ->
   return match.is_a_match(false) if !block
     
   if ans
-    env.record_loop( match.line().origin_line() )
+    env.record_loop( match.line().origin_line_text() )
     (new i_love_u(block, env)).run()
     env.run_tokens match.line().origin_line(), block 
     
@@ -460,6 +458,30 @@ insert_into_list.write 'procedure', (match) ->
   else
     list.insert pos, val
 
+top_bottom = new Procedure "!>Noun<, from top to bottom as !>WORD<:"
+top_bottom.write 'procedure', (match) ->
+
+  noun     = match.args()[0]
+  pos_name = match.args()[1]
+  block    = match.line().block()
+  env      = match.env()
+  
+  pos      = noun.target().position()
+  env.add_data( pos_name, pos )
+  
+  if pos.is_at_bottom()
+    return false
+
+  loop
+    (new i_love_u block, env ).run()
+    break if pos.is_at_bottom()
+    pos.downward()
+    
+  true
+  
+  
+
+
 i_love_u.add_base_proc  if_true
 i_love_u.add_base_proc  else_false
 i_love_u.add_base_proc  as_num
@@ -477,6 +499,7 @@ i_love_u.add_base_proc  while_loop
 i_love_u.add_base_proc  _do_
 i_love_u.add_base_proc  a_new_noun
 i_love_u.add_base_proc  insert_into_list
+i_love_u.add_base_proc  top_bottom
 
 list_noun = 
   

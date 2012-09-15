@@ -1,7 +1,9 @@
 rw = require "rw_ize"
 _  = require "underscore"
 XRegExp = require('xregexp').XRegExp
-
+englishy = require 'englishy'
+str_compare = 'englishy'.stringy_compare 
+    
 class Argument
   
   @types: () ->
@@ -27,6 +29,7 @@ class Argument
     val = t for t in Argument.types() when t.user_pattern() is txt
     if val
       return [regex, [val]]
+    
     captures = XRegExp.split( txt, Argument.regexp_capture_any_type() )
     if captures.length is 1 and captures[0] is txt
       return null
@@ -53,9 +56,9 @@ class Argument
     @rw_data().user_pattern = txt
     regex_and_types = Argument.user_pattern_to_types(txt)
     if regex_and_types
-      @rw_data().regex        = regex_and_types[0]
-      @rw_data().types        = regex_and_types[1]
-      @rw_data().first_type   = @types()[0]
+      @rw_data 'regex', regex_and_types[0]
+      @rw_data 'types', regex_and_types[1]
+      @rw_data 'first_type', @types()[0]
     @write "is_start", false
     @write "is_end",   false
 
@@ -63,29 +66,50 @@ class Argument
     return false if @is_plain_text()
     ( not not @first_type().is_splat ) && @first_type().is_splat()
 
-  extract_args: (txt, env, line) ->
-    if @is_plain_text() 
-      if txt is @user_pattern()
-        return true
-    
-    else if @regex() 
-      raw_args = RegExp.captures( @regex(), txt )
-      
-      if raw_args and raw_args.length isnt 0
-        args = ( env.get_if_data(v, line) for v in raw_args )
-        type_matches = ( @types()[i].is_a_match_with(v) for v, i in args )
-        all_match = _.all type_matches, (v) ->
-          v is true
-          
-        if txt is "My-List:" and @user_pattern() is "!>WORD<:"
-          console.log txt, args, @types()[0].is_a_match_with(args[0])
+  extract_args: (raw_txt, env, line) ->
+    if not raw_txt.value
+      raw_txt = new englishy.Stringy(raw_txt)
 
-        if all_match
-          return args
-        
+    txt = raw_txt.value()
+    ctxt = env.get_if_data(txt, line) 
+    target = if raw_txt.is_quoted()
+      txt
     else
-      if @first_type().is_a_match_with(txt)
-        return [txt]
+      ctxt
+        
+    if @regex() 
+      origin_args  = []
+      args         = []
+      mismatch     = false
+      i            = -1
+      captures     = RegExp.captures( @regex(), txt ) 
+      
+      return null unless captures
+      for raw_s in captures
+        i += 1
+        s = (new ep.Stringy(raw_s)) 
+        origin_args.push   s.value()
+        
+        compiled_arg = if s.is_quoted()
+          s.value()
+        else
+          env.get_if_data s.value(), line
+          
+        mismatch = not @types()[i].is_a_match_with( compiled_arg ) 
+        break if mismatch
+        args.push compiled_arg
+
+      return null if mismatch or _.isEmpty args.length
+      return [ args, origin_args ]
+        
+    else if @is_plain_text() 
+      if txt is @user_pattern() or ctxt is @user_pattern()
+        return true
+
+    else if @types().length is 1
+        
+      if @first_type().is_a_match_with(target)
+        return [ [target], [target] ]
     
     null
 

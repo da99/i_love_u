@@ -7,11 +7,20 @@ class Line
   @read_write_able "line", "block" 
 
   constructor: (line, block) ->
-    @rw_data "origin_line", line
+    @rw_data "origin_line", line.slice(0)
     @rw_data "origin_block", block
     @write "line", line
     @write "block", block
 
+
+  origin_line_text: () ->
+    new_arr = []
+    for v in @origin_line()
+      new_arr.push if v.value
+        "#{v.value()}"
+      else
+        "#{v}"
+    new_arr.join " "
 
   block_text: () ->
     @block() && @block().text()
@@ -23,7 +32,9 @@ class Line
     _.isEqual( @line(), line.line() ) && _.isEqual( @block_text(), line.block_text() )
 
   has_changed: () ->
-    _.isEqual( @origin_line(), @line() ) && _.isEqual( @origin_block_text(), @block_text() )
+    same_line  = _.isEqual @origin_line(), @line() 
+    same_block = _.isEqual @origin_block_text(), @block_text()  
+    not same_line or not same_block
 
   pair: () ->
     if @block()

@@ -4,18 +4,18 @@
   "description": "Fall in love with computers all over again.",
   "main": "lib/i_love_u.js",
   "dependencies": {
-    "englishy": ">0.4.1",
-    "humane_list": "*",
-    "array_surgeon": ">=0.4.3",
-    "funcy_perm": ">0.1.0",
-    "string_da99": ">0.1.1",
-    "underscore": "*",
-    "cloneextend": "*",
-    "rw_ize": ">0.1.2", 
-    "xregexp": "*"
+    "englishy": "1.1.x",
+    "humane_list": "1.x.x",
+    "array_surgeon": "0.5.x",
+    "funcy_perm": "0.1.x",
+    "string_da99": "0.2.x",
+    "underscore": "1.x.x",
+    "cloneextend": "0.x.x",
+    "rw_ize": "0.1.x", 
+    "xregexp": "2.x.x"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha  --watch --compilers coffee:coffee-script"
   },
   "repository": {
     "type": "git",

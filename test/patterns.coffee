@@ -2,12 +2,9 @@ luv = require "i_love_u"
 Procedure    = require "i_love_u/lib/Procedure"
 assert = require 'assert'
 
-new_luv = (args...) ->
-  new luv.i_love_u(args...)
-
-stack = (env) ->
-  arr = ( obj.value() for obj in env.data() )
-  arr
+helper = require "i_love_u/lib/test/helper"
+new_luv = helper.new_luv
+stack   = helper.stack
 
 describe "pattern: !>...<", () ->
 
@@ -23,5 +20,5 @@ describe "pattern: !>...<", () ->
       
     u.procs().push pr
     u.run()
-    assert.deepEqual stack(u), [ [["this", "and", "this"]] ]
+    assert.deepEqual stack(u), [ ["this", "and", "this"] ]
 

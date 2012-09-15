@@ -1,4 +1,5 @@
-
+# This file should be re-written for node.js.
+#
 describe "permissions of bin/" do
   
   it "should be 750" do

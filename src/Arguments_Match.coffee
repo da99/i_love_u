@@ -7,7 +7,7 @@ class Arguments_Match
 
   rw.ize(this)
 
-  @read_able "list", "env", "line", "new_line", "slice_desc", "args"
+  @read_able "list", "env", "line", "new_line", "slice_desc", "args", "origin_args"
   @read_write_able_bool "is_a_match", "is_full_match", "is_for_entire_line"
 
   @extract_args: (match, list) ->
@@ -25,30 +25,13 @@ class Arguments_Match
 
     args
 
-  @permutate: (env, line) ->
-    line_arr = line.line()
-    block    = line.block()
-    # Permuatate on variables.
-    data_pos = ( i for str,i in line_arr when env.is_name_of_data(str) )
-
-    raw_perms = funcy_perm(data_pos).perm (val, i) ->
-      -1
-
-    perms = []
-    for group in raw_perms
-      clone = line_arr.slice(0)
-      for ind in group
-        if ind != -1
-          clone[ind] = env.data(clone[ind], line)
-      perms.push clone
-    perms
-
   constructor: (arg_list, env, line, proc) ->
-
+    
     @rw_data "list",  arg_list.list()
-    @rw_data "env",  env
+    @rw_data "env",   env
     @rw_data "line",  line
     @rw_data "args",  []
+    @rw_data "origin_args",  []
     
     if arg_list.is_block_required() 
       if not @line().block()
@@ -61,20 +44,20 @@ class Arguments_Match
         @is_for_entire_line(true)
       
     # All possible variable matches.
-    perms = if proc.priority() is "before_variables"
-      [ line.line() ]
-    else
-      @constructor.permutate(env, line)
-      
     list    = @list()
     finders = []
 
-    print_it = false
-    args = []
+    print_it    = false
+    args        = []
+    origin_args = []
+    
+    desc_slice     = null
     
     for a, a_i in @list()
       finders.push (v, i, fi) ->
         
+        # return false unless v
+
         arg = list[fi]
         return false unless arg
           
@@ -83,56 +66,49 @@ class Arguments_Match
             return false if i isnt 0
 
           if arg.is_end() 
-            last_i = perms[0].length - 1
+            last_i = line.line().length - 1
             return false if i isnt last_i
 
         extracted = arg.extract_args(v, env, line)
         
         if not extracted
           args = []
+          origin_args = []
           return false 
           
         if extracted.length
-          args.splice args.length, 0, extracted...
+          args.splice        args.length, 0, extracted[0]...
+          origin_args.splice origin_args.length, 0, extracted[1]...
         
         true
         
       if a.is_splat and a.is_splat()
         _.last(finders).is_splat = true
 
-    # Select combo that matches.
-    pi             = 0 # pi as in perm i
-    limit          = perms[0].length - finders.length 
-    final_line_arr = null 
-    desc_slice     = null
     
-    loop
-
-      for combo, i in perms
-        args = []
-        desc_slice = surgeon(combo).describe_slice(finders, pi)
-        if desc_slice
-          final_line_arr = combo 
-          break
-
-      if final_line_arr
+    # ==== Scan the array until proc.procedure returns true
+    i =0 
+    limit = line.line().length - finders.length
+    loop 
+      desc_slice  = surgeon(line.line()).describe_slice(finders, i)
+      
+      if desc_slice
+        
         @is_a_match true
         
         # Set variable/values as args.
-        @rw_data "new_line",    final_line_arr
+        @rw_data "new_line",    line.line() 
         @rw_data "slice_desc",  desc_slice
         @rw_data "args",        args
+        @rw_data "origin_args", origin_args
         
         result = proc.procedure()(this)
         if @is_a_match()
           @replace(result)
-        else
-          final_line_arr = null
+
+      i += 1
+      break if i > limit or @is_a_match()
           
-      pi += 1
-      break if final_line_arr or (pi >= limit)
-      
-    
 
   replace: ( val ) ->
     
