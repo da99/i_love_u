@@ -75,8 +75,9 @@ by reading, pacing around, and thinking.
 Do you still hate computers?
 ----------------------------
 
-Try [learning programming](http://www.khanacademy.org/cs) and 
-use [Squeak](http://www.youtube.com/results?search_query=squeak+etoys&oq=squeak+etoys). 
+* Use [Squeak](http://www.youtube.com/results?search_query=squeak+etoys&oq=squeak+etoys). 
+* Try [learning programming](http://www.khanacademy.org/cs) the traditional way.
+* You can also [learn programming the hard way](http://learncodethehardway.org/).
 
 
 The End
