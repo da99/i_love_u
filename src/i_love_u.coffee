@@ -33,6 +33,21 @@ if !RegExp.first_capture
     vals  = null
     r.exec(str)
     
+to_noun = (n) ->
+  n.is_a_noun = () ->
+    true
+    
+  n.add_user_method = (name, meth) ->
+    this["user_method_#{name}"] = meth
+    
+  n.is_user_method = (name) ->
+    not not this["user_method_#{name}"]
+    
+  n.call_user_method = (name, args...) ->
+    this["user_method_#{name}"](args...)
+
+  n
+
 is_boolean_string = (v) ->
   v in [ 'true', 'false']
   
@@ -441,9 +456,29 @@ while_loop.write 'procedure', (match) ->
   
 a_new_noun = new Procedure "a new !>Noun<"
 a_new_noun.write 'procedure', (match) ->
-  env = match.env()
+  env  = match.env()
   noun = match.args()[0]
   cloneextend.clone(noun)
+
+prop_of_noun = new Procedure "the !>WORD< of !>WORD<"
+prop_of_noun.write 'procedure', (match) ->
+  env = match.env()
+  method = match.args()[0]
+  noun_name = match.args()[1]
+  
+  if not env.is_name_of_data(noun_name)
+    return match.is_a_match(false)
+  noun = env.data(noun_name)
+  
+  if not noun.is_a_noun?()
+    return match.is_a_match(false)
+
+  if not noun.is_user_method(method)
+    return match.is_a_match(false)
+
+  noun.call_user_method(method)
+
+
 
 insert_into_list = new Procedure "Insert at the !>WORD< of !>Noun<: !>ANY<."
 insert_into_list.write 'procedure', (match) ->
@@ -467,6 +502,10 @@ top_bottom.write 'procedure', (match) ->
   env      = match.env()
   
   pos      = noun.target().position()
+  to_noun(pos)
+  pos.add_user_method "value", () ->
+    this.value()
+
   env.add_data( pos_name, pos )
   
   if pos.is_at_bottom()
@@ -498,6 +537,7 @@ i_love_u.add_base_proc  equals
 i_love_u.add_base_proc  while_loop
 i_love_u.add_base_proc  _do_
 i_love_u.add_base_proc  a_new_noun
+i_love_u.add_base_proc  prop_of_noun
 i_love_u.add_base_proc  insert_into_list
 i_love_u.add_base_proc  top_bottom
 
@@ -509,11 +549,7 @@ list_noun =
   target: () ->
     @_target_ ?= new humane_list()
     
-  insert: (raw_pos, val) ->
-    pos = if raw_pos is "top"
-      "front"
-    else
-      "end"
+  insert: (pos, val) ->
     @target().push( pos, val )
 
   values: () ->

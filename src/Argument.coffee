@@ -217,7 +217,7 @@ class Argument
       @d.user_pat ?= "!>Noun<"
       
     is_a_match_with: (unk) ->
-      unk.is_a_noun and unk.is_a_noun()
+      (not not unk.is_a_noun) and unk.is_a_noun()
       
     convert: (unk) ->
       unk

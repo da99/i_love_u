@@ -236,10 +236,11 @@ describe "i_love_u", () ->
         Insert at the top of My-List: 3.
         Nums is: a new List.
         My-List, from top to bottom as x-pos: 
-          Insert at the bottom of Nums: the value of "x-pos".
+          Insert at the top of Nums: the value of "x-pos".
       """
       u.run()
-      assert.deepEqual stack(u), [['3','2','1'], ['1','2','3']]
+      vals = [ u.data('My-List').values(), u.data('Nums').values() ]
+      assert.deepEqual vals, [['3','2','1'], ['1','2','3']]
 
       
       

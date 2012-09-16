@@ -3,7 +3,13 @@ exports.new_luv = (args...) ->
   new luv.i_love_u(args...)
 
 exports.stack = (env) ->
-  arr = ( obj.value() for obj in env.data() when not ( obj.name() in ['List'] ) )
+  arr = []
+  for obj in env.data() 
+    if not (obj.name() in ['List'])
+      arr.push if obj.value().values
+        obj.value().values()
+      else
+        obj.value()
   arr
 
 
