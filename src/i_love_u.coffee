@@ -10,6 +10,7 @@ XRegExp      = require('xregexp' ).XRegExp
 Line         = require 'i_love_u/lib/Line'
 Procedure    = require "i_love_u/lib/Procedure"
 Arguments_Match = require "i_love_u/lib/Arguments_Match"
+Var_List  = require "i_love_u/lib/Var_List"
 LOOP_LIMIT   = 10123
 
 if !RegExp.captures
