@@ -125,14 +125,18 @@ exports.i_love_u = class i_love_u
 
   @add_base_proc: (proc) ->
     @Base_Procs.push proc
+    levels = 
+      top: -10
+      middle: 0
+      bottom: 10
+      last: 20
     @Base_Procs = @Base_Procs.sort (a, b) ->
-      levels = 
-        last: 20
-        low: 10
-        medium: 0
-        high: -10
-      a_level = levels[a.priority()]
-      b_level = levels[b.priority()]
+      a_level = levels[a.position()]
+      b_level = levels[b.position()]
+      if a_level is undefined 
+        throw new Error "Unknown position: #{a.position()}"
+      if b_level is undefined
+        throw new Error "Unknown position: #{b.position()}"
       a_level - b_level
 
   constructor: (str, env) ->
@@ -306,7 +310,7 @@ exports.i_love_u = class i_love_u
     
     
 md_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
-md_num.priority  'high'
+md_num.position  'top'
 md_num.procedure (match) ->
   m = match.args()[0]
   op= match.args()[1]
@@ -342,14 +346,14 @@ word_is_word.procedure  (match) ->
   val
 
 clone_list = new Procedure "a clone of !>List<"
-clone_list.priority "high"
+clone_list.position "top"
 clone_list.procedure  (match) ->
   list = _.first match.args()
   env  = match.env()
   $.extend(true, {}, clone)
 
 derive_list = new Procedure "a derivative of !>List<"
-derive_list.priority  "high"
+derive_list.position  "top"
 derive_list.procedure (match) ->
   list = _.first match.args()
   env  = match.env()
@@ -411,14 +415,14 @@ run_comparison_on_match = (op, r, l, match) ->
     match.is_a_match(false)
   
 not_equals = new Procedure "!>ANY< not equal to !>ANY<"
-not_equals.priority 'last'
+not_equals.position 'last'
 not_equals.procedure (match) ->
   r = match.args()[0]
   l= match.args()[1]
   run_comparison_on_match("!==", r, l, match)
   
 equals = new Procedure "!>ANY< equals !>ANY<"
-equals.priority 'last'
+equals.position 'last'
 equals.procedure (match) ->
   r = match.args()[0]
   l = match.args()[1]
