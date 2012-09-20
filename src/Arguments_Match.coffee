@@ -26,11 +26,11 @@ class Arguments_Match
     args
 
   constructor: (env, line, proc) ->
-    @rw_data "list",  proc.args_list().list()
-    @rw_data "env",   env
-    @rw_data "line",  line
-    @rw_data "args",  []
-    @rw_data "origin_args",  []
+    @rw "list",  proc.args_list().list()
+    @rw "env",   env
+    @rw "line",  line
+    @rw "args",  []
+    @rw "origin_args",  []
     
     if proc.args_list().is_block_required() 
       if not @line().block()
@@ -96,10 +96,10 @@ class Arguments_Match
         @is_a_match true
         
         # Set variable/values as args.
-        @rw_data "new_line",    line.line() 
-        @rw_data "slice_desc",  desc_slice
-        @rw_data "args",        args
-        @rw_data "origin_args", origin_args
+        @rw "new_line",    line.line() 
+        @rw "slice_desc",  desc_slice
+        @rw "args",        args
+        @rw "origin_args", origin_args
         
         result = proc.procedure()(this)
         if @is_a_match()
@@ -114,7 +114,7 @@ class Arguments_Match
     i = @slice_desc().start_index
     l = @slice_desc().length
     @new_line().splice i, l, val
-    @line().write 'line', @new_line()
+    @line().line @new_line()
     
     if @is_for_entire_line()
       @is_full_match(true)

@@ -104,14 +104,14 @@ exports.Var = class Var
   @read_write_able "value"
   @read_able_bool "is_a_var"
   constructor: (n, val) ->
-    @rw_data().name  = n
-    @rw_data().value = val
-    @rw_data().inherits_from = []
-    @rw_data().is_a_var = true
+    @rw 'name', n
+    @rw "value",  val
+    @rw "inherits_from",  []
+    @rw "is_a_var",  true
     
 exports.i_love_u = class i_love_u
   
-  @No_Match = "no_match"
+  @No_Match   = "no_match"
   @Base_Procs = []
   @Base_Data  = []
 
@@ -138,17 +138,17 @@ exports.i_love_u = class i_love_u
   constructor: (str, env) ->
     if not _.isString(str) 
       str = str.text()
-    @rw_data().original_code = str
-    @rw_data().code =  str.standardize()
-    @rw_data().eval_ed = []
-    @write 'scope', []
-    @write 'procs', [].concat(@constructor.Base_Procs)
+    @rw "original_code",  str
+    @rw "code",   str.standardize()
+    @rw "eval_ed",  []
+    @scope []
+    @procs [].concat(@constructor.Base_Procs)
       
     if env
-      @rw_data().loop_total = env.loop_total()
+      @rw "loop_total", env.loop_total()
       @_data_ = env.data()
     else
-      @rw_data().loop_total = 0
+      @rw "loop_total", 0
       @_data_ = []
       
       for pair in @constructor.Base_Data
@@ -217,7 +217,7 @@ exports.i_love_u = class i_love_u
     if new_v.is_a_var
       @_data_[val_i] = new_v
     else
-      @_data_[val_i].write "value", new_v
+      @_data_[val_i].value new_v
 
   delete_data: (name) ->
     if not @is_name_of_data(name)
@@ -245,7 +245,7 @@ exports.i_love_u = class i_love_u
       name
 
   record_loop: (text) ->
-    @write 'loop_total', @loop_total() + 1
+    @loop_total( @loop_total() + 1 )
     if @loop_total() > LOOP_LIMIT
       throw new Error("Loop limit exceeded #{LOOP_LIMIT} using: #{text}.")
     @loop_total()
@@ -306,8 +306,8 @@ exports.i_love_u = class i_love_u
     
     
 md_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
-md_num.write 'priority', 'high'
-md_num.write 'procedure', (match) ->
+md_num.priority  'high'
+md_num.procedure (match) ->
   m = match.args()[0]
   op= match.args()[1]
   n = match.args()[2]
@@ -321,7 +321,7 @@ md_num.write 'procedure', (match) ->
   
 
 as_num = new Procedure "!>NUM< !>CHAR< !>NUM<"
-as_num.write 'procedure', (match) ->
+as_num.procedure  (match) ->
   m = match.args()[0]
   op= match.args()[1]
   n = match.args()[2]
@@ -335,22 +335,22 @@ as_num.write 'procedure', (match) ->
       
   
 word_is_word = new Procedure "!>WORD< is: !>ANY<."
-word_is_word.write 'procedure', (match) ->
+word_is_word.procedure  (match) ->
   name = _.first match.args() 
   val  = _.last  match.args()
   match.env().add_data name, val
   val
 
 clone_list = new Procedure "a clone of !>List<"
-clone_list.write "priority", "high"
-clone_list.write 'procedure', (match) ->
+clone_list.priority "high"
+clone_list.procedure  (match) ->
   list = _.first match.args()
   env  = match.env()
   $.extend(true, {}, clone)
 
 derive_list = new Procedure "a derivative of !>List<"
-derive_list.write "priority", "high"
-derive_list.write "procedure", (match) ->
+derive_list.priority  "high"
+derive_list.procedure (match) ->
   list = _.first match.args()
   env  = match.env()
   new list()
@@ -358,14 +358,14 @@ derive_list.write "procedure", (match) ->
 
 
 update_word = new Procedure "Update !>WORD< to: !>ANY<."
-update_word.write 'procedure', (match) ->
+update_word.procedure  (match) ->
   name = _.first match.args()
   val  = _.last  match.args()
   match.env().update_data name, val
   val
      
 if_true = new Procedure "If !>true_or_false<:"
-if_true.write 'procedure', (match) ->
+if_true.procedure (match) ->
   raw_val = match.args()[0]
   return match.is_a_match(false) unless is_boolean_string(raw_val)
   
@@ -379,7 +379,7 @@ if_true.write 'procedure', (match) ->
     
 
 else_false = new Procedure "else:"
-else_false.write 'procedure', (match) ->
+else_false.procedure  (match) ->
   if _.last(match.env().scope()) is false
     luv = new i_love_u(match.line().block(), match.env())
     luv.run()
@@ -411,21 +411,21 @@ run_comparison_on_match = (op, r, l, match) ->
     match.is_a_match(false)
   
 not_equals = new Procedure "!>ANY< not equal to !>ANY<"
-not_equals.write 'priority', 'last'
-not_equals.write 'procedure', (match) ->
+not_equals.priority 'last'
+not_equals.procedure (match) ->
   r = match.args()[0]
   l= match.args()[1]
   run_comparison_on_match("!==", r, l, match)
   
 equals = new Procedure "!>ANY< equals !>ANY<"
-equals.write 'priority', 'last'
-equals.write 'procedure', (match) ->
+equals.priority 'last'
+equals.procedure (match) ->
   r = match.args()[0]
   l = match.args()[1]
   run_comparison_on_match("===", r, l, match)
 
 _do_ = new Procedure "Do:"
-_do_.write 'procedure', (match) ->
+_do_.procedure  (match) ->
   block = match.line().block()
   env  = match.env()
 
@@ -435,7 +435,7 @@ _do_.write 'procedure', (match) ->
   true
 
 while_loop = new Procedure "While !>true_or_false<."
-while_loop.write 'procedure', (match) ->
+while_loop.procedure (match) ->
   env  = match.env()
   prev = _.last(env.scope()) 
   ans  = match.args()[0]
@@ -456,13 +456,13 @@ while_loop.write 'procedure', (match) ->
   ans
   
 a_new_noun = new Procedure "a new !>Noun<"
-a_new_noun.write 'procedure', (match) ->
+a_new_noun.procedure  (match) ->
   env  = match.env()
   noun = match.args()[0]
   cloneextend.clone(noun)
 
 prop_of_noun = new Procedure "the !>WORD< of !>WORD<"
-prop_of_noun.write 'procedure', (match) ->
+prop_of_noun.procedure  (match) ->
   env = match.env()
   method = match.args()[0]
   noun_name = match.args()[1]
@@ -482,7 +482,7 @@ prop_of_noun.write 'procedure', (match) ->
 
 
 insert_into_list = new Procedure "Insert at the !>WORD< of !>Noun<: !>ANY<."
-insert_into_list.write 'procedure', (match) ->
+insert_into_list.procedure (match) ->
   env = match.env()
   pos  = match.args()[0]
   list = match.args()[1]
@@ -495,7 +495,7 @@ insert_into_list.write 'procedure', (match) ->
     val
 
 top_bottom = new Procedure "!>Noun<, from top to bottom as !>WORD<:"
-top_bottom.write 'procedure', (match) ->
+top_bottom.procedure  (match) ->
 
   noun     = match.args()[0]
   pos_name = match.args()[1]

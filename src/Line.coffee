@@ -7,10 +7,10 @@ class Line
   @read_write_able "line", "block" 
 
   constructor: (line, block) ->
-    @rw_data "origin_line", line.slice(0)
-    @rw_data "origin_block", block
-    @write "line", line
-    @write "block", block
+    @rw "origin_line", line.slice(0)
+    @rw "origin_block", block
+    @line    line
+    @block   block
 
 
   origin_line_text: () ->

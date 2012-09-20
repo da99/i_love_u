@@ -14,7 +14,7 @@ describe "pattern: !>...<", () ->
         Blank.
     """
     pr = new Procedure "Record !>...<:"
-    pr.write 'procedure', (match) ->
+    pr.procedure (match) ->
       match.env().add_data("tokens", match.args())
       match.replace true
       

@@ -39,7 +39,7 @@ describe "i_love_u", () ->
 
     it ".address is write_able", () ->
       l = new_luv("This is code.")
-      l.write 'address', "/some.address/"
+      l.address "/some.address/"
       assert.equal l.address(), "/some.address/"
       
   describe 'update_data(k,v)', () ->
@@ -206,7 +206,7 @@ describe "i_love_u", () ->
         While Number not equal to 3:
           Update "Number" to: Number + 1.
       """
-      u.write "loop_total", limit - 1
+      u.loop_total( limit - 1 )
       err = try
         u.run()
       catch e

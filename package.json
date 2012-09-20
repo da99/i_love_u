@@ -11,7 +11,7 @@
     "string_da99": "0.2.x",
     "underscore": "1.x.x",
     "cloneextend": "0.x.x",
-    "rw_ize": "0.1.x",
+    "rw_ize": "1.x.x",
     "xregexp": "2.x.x"
   },
   "scripts": {

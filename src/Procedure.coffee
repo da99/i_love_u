@@ -8,11 +8,11 @@ class Procedure
   @read_able 'args_list', 'regexp'
 
   constructor: (pattern) ->
-    @rw_data "data",     {}
-    @rw_data "pattern",  pattern.strip()
-    @rw_data "list",     []
-    @rw_data "priority", 'low'
-    @rw_data "args_list", new Argument_List(@pattern())
+    @rw "data",     {}
+    @rw "pattern",  pattern.strip()
+    @rw "list",     []
+    @rw "priority", 'low'
+    @rw "args_list", new Argument_List(@pattern())
 
   is_like: (str) ->
     @pattern().indexOf(str) > -1

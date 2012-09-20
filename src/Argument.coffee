@@ -53,14 +53,14 @@ class Argument
   
 
   constructor: (txt) ->
-    @rw_data().user_pattern = txt
+    @rw 'user_pattern', txt
     regex_and_types = Argument.user_pattern_to_types(txt)
     if regex_and_types
-      @rw_data 'regex', regex_and_types[0]
-      @rw_data 'types', regex_and_types[1]
-      @rw_data 'first_type', @types()[0]
-    @write "is_start", false
-    @write "is_end",   false
+      @rw 'regex', regex_and_types[0]
+      @rw 'types', regex_and_types[1]
+      @rw 'first_type', @types()[0]
+    @is_start false
+    @is_end   false
 
   is_splat: () ->
     return false if @is_plain_text()

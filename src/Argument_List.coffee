@@ -14,12 +14,12 @@ class Argument_List
     str = raw_str.strip()
     
     if str.has_end_colon()
-      @rw_data 'is_block_required', true
+      @rw 'is_block_required', true
 
     full_sentence = str.has_end_period() or str.has_end_colon()
     if full_sentence
       str = str.replace( /\.$/, "" ).replace( /\:$/, "" )
-    @rw_data 'list', ( ( new Argument(v) ) for v in str.whitespace_split() )
+    @rw 'list', ( ( new Argument(v) ) for v in str.whitespace_split() )
     
     if full_sentence
       _.first(@list()).is_start(true)
