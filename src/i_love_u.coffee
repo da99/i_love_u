@@ -124,20 +124,15 @@ exports.i_love_u = class i_love_u
     @Base_Data.push [name, val]
 
   @add_base_proc: (proc) ->
-    @Base_Procs.push proc
-    levels = 
-      top: -10
-      middle: 0
-      bottom: 10
-      last: 20
-    @Base_Procs = @Base_Procs.sort (a, b) ->
-      a_level = levels[a.position()]
-      b_level = levels[b.position()]
-      if a_level is undefined 
-        throw new Error "Unknown position: #{a.position()}"
-      if b_level is undefined
-        throw new Error "Unknown position: #{b.position()}"
-      a_level - b_level
+    switch proc.position()
+      when 'top'
+        @Base_Procs.unshift proc
+      when 'middle'
+        @Base_Procs.splice(Math.ceil( @Base_Procs.length / 2 ), 0, proc)
+      when 'bottom'
+        @Base_Procs.push proc
+      else
+        throw new Error "Unknown position for \"#{proc.pattern()}\": #{proc.position()}"
 
   constructor: (str, env) ->
     if not _.isString(str) 
@@ -415,14 +410,14 @@ run_comparison_on_match = (op, r, l, match) ->
     match.is_a_match(false)
   
 not_equals = new Procedure "!>ANY< not equal to !>ANY<"
-not_equals.position 'last'
+not_equals.position 'bottom'
 not_equals.procedure (match) ->
   r = match.args()[0]
   l= match.args()[1]
   run_comparison_on_match("!==", r, l, match)
   
 equals = new Procedure "!>ANY< equals !>ANY<"
-equals.position 'last'
+equals.position 'bottom'
 equals.procedure (match) ->
   r = match.args()[0]
   l = match.args()[1]
