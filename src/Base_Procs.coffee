@@ -282,36 +282,31 @@ top_bottom.procedure  (match) ->
   
   
 
-procs = []
-
-procs.push  if_true
-procs.push  else_false
-procs.push  as_num
-procs.push  md_num
-
-procs.push  word_is_word
-procs.push  update_word
-
-procs.push  clone_list
-procs.push  derive_list
-
-procs.push  not_equals
-procs.push  equals
-procs.push  while_loop
-procs.push  _do_
-procs.push  a_new_noun
-procs.push  prop_of_noun
-procs.push  insert_into_list
-procs.push  top_bottom
 
 
-procs.i_love_u = (p) ->
-  if i_love_u
-    throw new Error "File is being re-compiled."
-  i_love_u = p
-  for proc in procs
-    i_love_u.procs proc
+procs = {}
+procs.i_love_u = (ilu) ->
+  
+  ilu.vars().push_name_and_var 'if_true',    if_true
+  ilu.vars().push_name_and_var 'else_false', else_false
+  ilu.vars().push_name_and_var 'as_num', as_num
+  ilu.vars().push_name_and_var 'md_num', md_num
+
+  ilu.vars().push_name_and_var 'word_is_word', word_is_word
+  ilu.vars().push_name_and_var 'update_word',  update_word
+
+  ilu.vars().push_name_and_var 'clone_list',  clone_list
+  ilu.vars().push_name_and_var 'derive_list', derive_list
+
+  ilu.vars().push_name_and_var 'not_equals', not_equals
+  ilu.vars().push_name_and_var 'equals',     equals
+  ilu.vars().push_name_and_var 'while_loop', while_loop
+  ilu.vars().push_name_and_var '_do_',       _do_
+  ilu.vars().push_name_and_var 'a_new_noun', a_new_noun
+  ilu.vars().push_name_and_var 'prop_of_noun', prop_of_noun
+  ilu.vars().push_name_and_var 'insert_into_list', insert_into_list
+  ilu.vars().push_name_and_var 'top_bottom', top_bottom
+  
   
 module.exports = procs
-
 

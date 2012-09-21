@@ -4,14 +4,14 @@
 module.exports = {}
 module.exports.i_love_u = (ilu) ->
     
-  ilu.add_data /^Block_Text_Line_[0-9]+$/, (name, env, line) ->
+  ilu.vars().push_name_and_value /^Block_Text_Line_[0-9]+$/, (name, env, line) ->
       block = line.block()
       if !block
         throw new Error("Block is not defined.")
       num = parseInt name.split('_').pop()
       val = block.text_line( num )
 
-  ilu.add_data /^Block_List_[0-9]+$/, (name, env, line) ->
+  ilu.vars().push_name_and_value /^Block_List_[0-9]+$/, (name, env, line) ->
       block = line.block()
       if !block
         throw new Error("Block is not defined.")
@@ -27,7 +27,7 @@ module.exports.i_love_u = (ilu) ->
       list
       
       
-  ilu.add_data "List", {
+  ilu.vars().push_name_and_value "List", {
     is_a_noun: () ->
       true
       

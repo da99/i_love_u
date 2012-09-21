@@ -56,34 +56,15 @@ exports.i_love_u = class i_love_u
   # ==============================================================
   
   @No_Match   = "no_match"
-  @_procs_ = []
-  @_data_  = []
-
     
-  @data: (name, val) ->
-    if arguments.length is 0
-      return @_data_  
-    
-    else if arguments.length is 1
-      _.find @_data_, (v) ->
-        v[0] is name
-        
-    else 
-      @_data_.push( new Var(name, val) )
+  @inits: () ->
+    @_inits_ ?= []
+    if arguments.length isnt 0
+      for v in arguments
+        @_inits_.push v
+      @_inits_ = _.unique(@_inits_)
+    @_inits_
 
-  @procs: (proc) ->
-
-    return @_procs_ if arguments.length is 0
-
-    switch proc.position()
-      when 'top'
-        @_procs_.unshift proc
-      when 'middle'
-        @_procs_.splice(Math.ceil( @_procs_.length / 2 ), 0, proc)
-      when 'bottom'
-        @_procs_.push proc
-      else
-        throw new Error "Unknown position for \"#{proc.pattern()}\": #{proc.position()}"
 
       
   # ==============================================================
@@ -91,7 +72,7 @@ exports.i_love_u = class i_love_u
   # ==============================================================
   
   rw.ize(this)
-  @read_able       "outside_scope", 'pattern', 'data', 'procs', 'data', 'scope', 'loop_total'
+  @read_able       "outside_scope", 'vars', 'scope', 'loop_total'
   @read_write_able "address"
   @read_able       'code', 'original_code', 'eval_ed'
   
@@ -103,65 +84,18 @@ exports.i_love_u = class i_love_u
     @rw "eval_ed",        []
     @rw 'scope',          []
     @rw "loop_total",     0
-    @_data_ = []
+    @_vars_ = new Var_List(this)
       
     if env
-      @rw  'procs', []
       @rw  'outside_scope', env
     else
-      @rw  'procs', [].concat(@constructor.procs())
       @rw  'outside_scope', "none"
-      for pair in @constructor.data()
-        @add_data( pair... )
+      for init in @constructor.inits()
+        init(this)
     
   is_top_most_scope: () ->
     @outside_scope() is 'none'
 
-  # ==============================================================
-  #                      Data Read/Write
-  # ==============================================================
-  
-  is_name_of_data: (k) ->
-    val = v for v in @_data_ when v.is_named(k)
-    not not val
-    
-  add_data: (k, v) ->
-    @_data_.push(new Var(k, v))
-
-  update_data: (k, new_v) ->
-    val_i = i for v, i in @_data_ when v.name() is k
-    if isNaN(parseInt(val_i))
-      throw new Error("No data named: #{k}")
-    
-    if new_v.is_a_var
-      @_data_[val_i] = new_v
-    else
-      @_data_[val_i].value new_v
-
-  delete_data: (name) ->
-    if not @is_name_of_data(name)
-      throw new Error("Data does not exist: #{name}.") 
-    pos = k for v, k in @_data_ when v.name() is name
-    @_data_.splice pos, 1
-
-  data: ( k, line ) ->
-    if @is_name_of_dynamic_data(k)
-      @dynamic_data(k, line)
-    else if k
-      val = v for v in @_data_ when v.name() is k
-      val && val.value()
-    else
-      vals = (v for v in @_data_ when ("name" of v) and ("value" of v) )
-      vals
-      @_data_
-      
-  get_if_data: (name, line) ->
-    if not line
-      throw new Error "Line is required."
-    if @is_name_of_data(name, line)
-      @data name, line
-    else
-      name
 
   # ==============================================================
   #                      Functions & Procedures
@@ -226,8 +160,7 @@ exports.i_love_u = class i_love_u
     true
   
   
-Base_Procs.i_love_u(exports.i_love_u)
-Base_Data.i_love_u(exports.i_love_u)
+i_love_u.inits Base_Procs.i_love_u, Base_Data.i_love_u
 
 
 

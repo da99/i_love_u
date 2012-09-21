@@ -14,6 +14,9 @@ class Procedure
     @rw "position", 'bottom'
     @rw "args_list", new Argument_List(@pattern())
 
+  is_a_procedure: () ->
+    true
+
   is_like: (str) ->
     @pattern().indexOf(str) > -1
 
