@@ -11,6 +11,11 @@ i\_love\_u
 
 Fall in love with computers all over again.
 
+A scripting language for graphic designers using "design for extremes".
+
+It reads like a subset of English. However, it has Dynamic Syntax (TM).
+So you can mold it to read like Japanese, Spanish, etc.
+
 
 Mastering the subtle art of writing i\_love\_u code.
 -------
