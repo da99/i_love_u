@@ -10,6 +10,7 @@ XRegExp      = require('xregexp' ).XRegExp
 Line         = require 'i_love_u/lib/Line'
 Procedure    = require "i_love_u/lib/Procedure"
 Base_Procs   = require "i_love_u/lib/Base_Procs"
+Base_Data    = require "i_love_u/lib/Base_Data"
 
 Arguments_Match = require "i_love_u/lib/Arguments_Match"
 Var_List  = require "i_love_u/lib/Var_List"
@@ -50,98 +51,78 @@ exports.Var = class Var
     
 exports.i_love_u = class i_love_u
   
-  @No_Match   = "no_match"
-  @Base_Procs = []
-  @Base_Data  = []
-
-  rw.ize(this)
+  # ==============================================================
+  #                      "Class" Functionality
+  # ==============================================================
   
-  @read_write_able 'address', 'pattern', 'data', 'procs', 'data', 'scope', 'loop_total'
-  @read_able 'code', 'original_code', 'eval_ed'
-    
-  @add_base_data: (name, val) ->
-    @Base_Data.push [name, val]
+  @No_Match   = "no_match"
+  @_procs_ = []
+  @_data_  = []
 
-  @add_base_proc: (proc) ->
+    
+  @data: (name, val) ->
+    if arguments.length is 0
+      return @_data_  
+    
+    else if arguments.length is 1
+      _.find @_data_, (v) ->
+        v[0] is name
+        
+    else 
+      @_data_.push( new Var(name, val) )
+
+  @procs: (proc) ->
+
+    return @_procs_ if arguments.length is 0
+
     switch proc.position()
       when 'top'
-        @Base_Procs.unshift proc
+        @_procs_.unshift proc
       when 'middle'
-        @Base_Procs.splice(Math.ceil( @Base_Procs.length / 2 ), 0, proc)
+        @_procs_.splice(Math.ceil( @_procs_.length / 2 ), 0, proc)
       when 'bottom'
-        @Base_Procs.push proc
+        @_procs_.push proc
       else
         throw new Error "Unknown position for \"#{proc.pattern()}\": #{proc.position()}"
 
+      
+  # ==============================================================
+  #                      "Instance" Functionality
+  # ==============================================================
+  
+  rw.ize(this)
+  @read_able       "outside_scope", 'pattern', 'data', 'procs', 'data', 'scope', 'loop_total'
+  @read_write_able "address"
+  @read_able       'code', 'original_code', 'eval_ed'
+  
   constructor: (str, env) ->
     if not _.isString(str) 
       str = str.text()
     @rw "original_code",  str
-    @rw "code",   str.standardize()
-    @rw "eval_ed",  []
-    @scope []
-    @procs [].concat(@constructor.Base_Procs)
+    @rw "code",           str.standardize()
+    @rw "eval_ed",        []
+    @rw 'scope',          []
+    @rw "loop_total",     0
+    @_data_ = []
       
     if env
-      @rw "loop_total", env.loop_total()
-      @_data_ = env.data()
+      @rw  'procs', []
+      @rw  'outside_scope', env
     else
-      @rw "loop_total", 0
-      @_data_ = []
-      
-      for pair in @constructor.Base_Data
+      @rw  'procs', [].concat(@constructor.procs())
+      @rw  'outside_scope', "none"
+      for pair in @constructor.data()
         @add_data( pair... )
     
-  @is_name_of_dynamic_data: (name) ->
-    (not not @dynamic_data(name))
-        
-  @dynamic_data: (args...) ->
-    @_dynamic_data_ ?= []
-    
-    if args.length is 0
-      @_dynamic_data_
-    else if args.length is 1
-      name = args[0]
-      func = kv[1] for kv in @_dynamic_data_ when name is kv[0] or kv[0].test(name)
-      func
-    else if args.length is 2
-      @_dynamic_data_.push [args[0], args[1]]
-    else
-      throw new Error("Unknown args: #{args}")
-    
-  @dynamic_data /^Block_Text_Line_[0-9]+$/, (name, env, line) ->
-    block = line.block()
-    if !block
-      throw new Error("Block is not defined.")
-    num = parseInt name.split('_').pop()
-    val = block.text_line( num )
+  is_top_most_scope: () ->
+    @outside_scope() is 'none'
 
-  @dynamic_data /^Block_List_[0-9]+$/, (name, env, line) ->
-    block = line.block()
-    if !block
-      throw new Error("Block is not defined.")
-    num = parseInt name.split('_').pop()
-    str = block.text_line( num ).strip()
-    tokens = _.flatten( new englishy.Englishy(str + '.').to_tokens() )
-    list = []
-    for v in tokens
-      if v.is_quoted()
-        list.push v.value()
-      else
-        list.push env.get_if_data(v.value(), line)
-    list
-
-  dynamic_data: (name, line) ->
-    func = @constructor.dynamic_data(name)
-    func( name, this, line )
-          
-  is_name_of_dynamic_data: (k) ->
-    @constructor.is_name_of_dynamic_data(k)
-    
+  # ==============================================================
+  #                      Data Read/Write
+  # ==============================================================
+  
   is_name_of_data: (k) ->
-    return true if @is_name_of_dynamic_data(k)
-    
-    val = v for v in @_data_ when v.name() == k
+    val = v for v in @_data_ when v.is_named(k)
     not not val
     
   add_data: (k, v) ->
@@ -182,6 +163,11 @@ exports.i_love_u = class i_love_u
     else
       name
 
+  # ==============================================================
+  #                      Functions & Procedures
+  # ==============================================================
+  
+  
   record_loop: (text) ->
     @loop_total( @loop_total() + 1 )
     if @loop_total() > LOOP_LIMIT
@@ -189,10 +175,10 @@ exports.i_love_u = class i_love_u
     @loop_total()
     
   run_tokens: (args...) ->
-    line  = new Line( args... ) 
+    line          = new Line( args... ) 
     is_full_match = false
     partial_match = false
-    me       = this
+    me            = this
 
     loop 
       is_any_match  = false
@@ -241,24 +227,7 @@ exports.i_love_u = class i_love_u
   
   
 Base_Procs.i_love_u(exports.i_love_u)
-
-# Add basic Nouns:
-list_noun = 
-  
-  is_a_noun: () ->
-    true
-    
-  target: () ->
-    @_target_ ?= new humane_list()
-    
-  insert: (pos, val) ->
-    @target().push( pos, val )
-
-  values: () ->
-    @target().values()
-
-  
-i_love_u.add_base_data "List", list_noun
+Base_Data.i_love_u(exports.i_love_u)
 
 
 

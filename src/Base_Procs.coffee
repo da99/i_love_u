@@ -310,7 +310,7 @@ procs.i_love_u = (p) ->
     throw new Error "File is being re-compiled."
   i_love_u = p
   for proc in procs
-    i_love_u.add_base_proc proc
+    i_love_u.procs proc
   
 module.exports = procs
 
