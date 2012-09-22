@@ -67,15 +67,14 @@ class Var_List
       _var = @env().envs().read().vars().get(name, line)
   
     if not _var
-      _var = if @vars[name] 
-        @vars[name]
+      _var = if @vars()[name] 
+        @vars()[name]
       else
         _.find @pattern_based(), (v) ->
           v.is_named(name)
+      if _var and _var.is_local_only() and line.calling_env() isnt @env()
+        _var = null
           
-    if _var and _var.is_local_only() and _var.env() isnt line.calling_env()
-      _var = undefined
-
     _var
       
   push_name_and_value: (name, val) ->

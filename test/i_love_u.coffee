@@ -4,6 +4,7 @@ limit = 10123
 
 helper = require "i_love_u/lib/test/helper"
 Var    = require "i_love_u/lib/Var"
+Line   = require "i_love_u/lib/Line"
 new_luv = helper.new_luv
 stack   = helper.stack
 
@@ -30,10 +31,9 @@ describe "i_love_u", () ->
       l = new_luv("This is origin.")
       assert.equal l.original_code(), "This is origin."
 
-    it "sets .data() to ['List']", () ->
+    it "sets List as a basic noun.", () ->
       l = new_luv("This starts a data list.")
-      data = ( obj.name() for obj in l.data() )
-      assert.deepEqual data, ['List']
+      assert.deepEqual l.get('List', new Line("Print List.", l)).value().is_a_noun(), true 
 
     it ".address is write_able", () ->
       l = new_luv("This is code.")

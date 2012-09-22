@@ -13,6 +13,7 @@ Base_Procs   = require "i_love_u/lib/Base_Procs"
 Base_Data    = require "i_love_u/lib/Base_Data"
 
 Arguments_Match = require "i_love_u/lib/Arguments_Match"
+Var       = require "i_love_u/lib/Var"
 Var_List  = require "i_love_u/lib/Var_List"
 Env_List  = require "i_love_u/lib/Env_List"
 LOOP_LIMIT   = 10123
@@ -38,17 +39,6 @@ if !RegExp.first_capture
     vals  = null
     r.exec(str)
     
-
-exports.Var = class Var
-  rw.ize(this)
-  @read_able "name", "inherits_from"
-  @read_write_able "value"
-  @read_able_bool "is_a_var"
-  constructor: (n, val) ->
-    @rw 'name', n
-    @rw "value",  val
-    @rw "inherits_from",  []
-    @rw "is_a_var",  true
     
 exports.i_love_u = class i_love_u
   
@@ -91,10 +81,15 @@ exports.i_love_u = class i_love_u
       for init in @constructor.inits()
         init(this)
     
-  for m in ['is_read_local', 'is_write_local', 'has_outside']
-    this.prototype[m] = new Function """
-      return this.envs().#{m}();
-    """
+  meths = {
+    'vars': ['get', 'get_if_data', 'run_line_tokens', 'push', 'push_name_and_value'],
+    'envs': ['is_read_local', 'is_write_local', 'has_outside', 'read', 'write']
+  }
+  for prop, arr of meths
+    for meth in arr
+      this.prototype[meth] = new Function """
+        return this.#{prop}().#{meth}.apply( this.#{prop}(), Array.prototype.slice.apply(arguments) );
+      """
   # ==============================================================
   #                      Functions & Procedures
   # ==============================================================
@@ -104,9 +99,6 @@ exports.i_love_u = class i_love_u
     if @loop_total() > LOOP_LIMIT
       throw new Error("Loop limit exceeded #{LOOP_LIMIT} using: #{text}.")
     @loop_total()
-      
-  run_line_tokens: ( pair ) ->
-    @vars().run_line_tokens pair
     
   run: () ->
     lines = (new englishy.Englishy @code()).to_tokens()
