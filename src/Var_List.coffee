@@ -1,6 +1,6 @@
 rw = require "rw_ize"
 _  = require "underscore"
-Var = require "i_love_u/lib/Var"
+Var  = require "i_love_u/lib/Var"
 Line = require "i_love_u/lib/Line"
 Arguments_Match = require "i_love_u/lib/Arguments_Match"
 
@@ -22,6 +22,28 @@ class Var_List
   is_a_var_list: () ->
     true
     
+  array: (type) ->
+    type = 'all' if arguments.length is 0
+    vars = switch type
+      when 'vars', 'var_values'
+        arr = []
+        for k, v of @vars() 
+          if v.is_user_defined() 
+            if type is 'var_values'
+              arr.push v.value()
+            else
+              arr.push v
+        arr
+      when 'procedures'
+        ( v for k, v of @vars() when v.is_a_procedure?() )
+      when 'all'
+        @vars()
+      else
+        throw new Error "Unknown var type: #{type}"
+      
+    if not @env().is_read_local()
+      vars =  @env().read().vars().array(type).concat vars
+    vars
   # ==============================================================
   #                      Push/Remove/Get Ops
   # ==============================================================
@@ -111,7 +133,7 @@ class Var_List
   run_line_tokens: ( pair ) ->
     match = new Arguments_Match(new Line(pair, @env()))
     if not @env().is_read_local()
-      match = @env().envs().read().run_line_tokens( pair, env )
+      match = @env().envs().read().run_line_tokens( pair )
       
     return match if match.is_full_match?()
     

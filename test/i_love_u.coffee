@@ -3,6 +3,7 @@ assert = require 'assert'
 limit = 10123
 
 helper = require "i_love_u/lib/test/helper"
+Var    = require "i_love_u/lib/Var"
 new_luv = helper.new_luv
 stack   = helper.stack
 
@@ -10,19 +11,16 @@ describe "i_love_u", () ->
   
   describe 'constructor(str, env)', () ->
 
-    it "sets .vars() to the same object as original", () ->
+    it "sets outside env if a env is pass to it.", () ->
       l = new_luv("One is: 1.")
       l.run()
       nl = new_luv("Two is: 2.", l)
-      nl.vars().push new luv.Var("Five", 5)
+      nl.run()
+      nl.vars().push( new Var("Five", 5) )
       
-      assert.deepEqual stack(l), stack(nl)
+      assert.deepEqual stack(nl), ['1', '2', 5]
 
   describe 'constructor(str)', () ->
-
-    it "sets .scope() to []", () ->
-      l = new_luv("This is a new scope.")
-      assert.deepEqual l.scope(), []
 
     it "sets .code() to working copy of code.", () ->
       l = new_luv("This is code.")
