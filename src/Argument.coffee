@@ -66,12 +66,13 @@ class Argument
     return false if @is_plain_text()
     ( not not @first_type().is_splat ) && @first_type().is_splat()
 
-  extract_args: (raw_txt, env, line) ->
+  extract_args: (raw_txt, line) ->
+    env = line.calling_env()
     if not raw_txt.value
       raw_txt = new englishy.Stringy(raw_txt)
 
     txt = raw_txt.value()
-    ctxt = env.get_if_data(txt, line) 
+    ctxt = env.vars().get_if_data(txt, line) 
     target = if raw_txt.is_quoted()
       txt
     else

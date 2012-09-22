@@ -3,15 +3,23 @@ _  = require "underscore"
 class Line
 
   rw.ize this
-  @read_able "origin_line", "origin_block" 
-  @read_write_able "line", "block" 
+  @read_able "origin_line", "origin_block", "calling_env"
+  @read_write_able "line", "block"
 
-  constructor: (line, block) ->
-    @rw "origin_line", line.slice(0)
+  constructor: (line_and_block, env) ->
+    if not env
+      throw new Error "Calling env. of line is required."
+    line = line_and_block[0]
+    block = line_and_block[1]
+    @rw "origin_line",  line.slice(0)
     @rw "origin_block", block
-    @line    line
-    @block   block
+    @rw "calling_env",  env
+    @line    @origin_line()
+    @block   @origin_block()
 
+
+  is_a_line: () ->
+    true
 
   origin_line_text: () ->
     new_arr = []

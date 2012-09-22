@@ -7,7 +7,7 @@ class Arguments_Match
 
   rw.ize(this)
 
-  @read_able "list", "env", "line", "new_line", "slice_desc", "args", "origin_args"
+  @read_able "list", "line", "new_line", "slice_desc", "args", "origin_args"
   @read_write_able_bool "is_a_match", "is_full_match", "is_for_entire_line"
 
   @extract_args: (match, list) ->
@@ -25,9 +25,12 @@ class Arguments_Match
 
     args
 
-  constructor: (env, line, proc) ->
+  constructor: (line, proc) ->
+    if arguments.length is 1
+      @rw "line", arguments[0]
+      return this
+    
     @rw "list",  proc.args_list().list()
-    @rw "env",   env
     @rw "line",  line
     @rw "args",  []
     @rw "origin_args",  []
@@ -68,7 +71,7 @@ class Arguments_Match
             last_i = line.line().length - 1
             return false if i isnt last_i
 
-        extracted = arg.extract_args(v, env, line)
+        extracted = arg.extract_args(v, line)
     
         if not extracted
           args = []

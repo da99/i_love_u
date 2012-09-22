@@ -10,13 +10,13 @@ describe "i_love_u", () ->
   
   describe 'constructor(str, env)', () ->
 
-    it "sets .data() to the same object as original", () ->
+    it "sets .vars() to the same object as original", () ->
       l = new_luv("One is: 1.")
       l.run()
       nl = new_luv("Two is: 2.", l)
-      nl.data().push new luv.Var("Five", 5)
+      nl.vars().push new luv.Var("Five", 5)
       
-      assert.deepEqual l.data(), nl.data()
+      assert.deepEqual stack(l), stack(nl)
 
   describe 'constructor(str)', () ->
 
@@ -106,14 +106,14 @@ describe "i_love_u", () ->
       u.run()
       assert.deepEqual stack(u), ["1", 32]
 
-  describe 'run_tokens(args...)', () ->
+  describe 'run_line_tokens(args...)', () ->
 
     it "evals the tokens as if they were a parsed string.", () ->
       u = new_luv """
       One is: 1.
       """
       u.run()
-      u.run_tokens(['Two', 'is:', '2'])
+      u.run_line_tokens( [ ['Two', 'is:', '2'] ])
       assert.deepEqual stack(u), ['1','2']
 
   describe 'special variables for manipulating the block attached to line', () ->

@@ -1,6 +1,8 @@
 rw = require "rw_ize"
 _  = require "underscore"
 Var = require "i_love_u/lib/Var"
+Line = require "i_love_u/lib/Line"
+Arguments_Match = require "i_love_u/lib/Arguments_Match"
 
 # Can hold vars and other lists of vars.
 class Var_List
@@ -34,26 +36,25 @@ class Var_List
     if not line.is_a_line?()
       throw new Error "Line is required."
     
-    get(name, line) or name
+    @get(name, line) or name
       
   get: (name, line) ->
-    calling_env = line.env()
-    target = null
+    _var = null
     
-    if not @env().env_list().is_local_read()
-      target = @env().env_list().read().get(name, line)
+    if not @env().envs().is_read_local()
+      _var = @env().envs().read().vars().get(name, line)
   
-    if not target
-      target = if @vars[name] 
+    if not _var
+      _var = if @vars[name] 
         @vars[name]
       else
         _.find @pattern_based(), (v) ->
           v.is_named(name)
           
-    if (not target.is_import_able()) and target.env() isnt calling_env
-      target = undefined
+    if _var and _var.is_local_only() and _var.env() isnt line.calling_env()
+      _var = undefined
 
-    target
+    _var
       
   push_name_and_value: (name, val) ->
     if arguments.length isnt 2
@@ -61,14 +62,17 @@ class Var_List
     @push(new Var name, val)
 
   push: (v) ->
-    return(@env().push(v)) unless @to_local()
+    if arguments.length isnt 1
+      throw new Error ".push only accepts one argument."
+    if not @env().is_write_local() 
+      return @env().envs().write().vars().push v
     
-    v.belongs_to @object_id()
-    if @vars()[ v.name() ]
+    if @has_named v.name()
       throw new Error "Name for var already defined: #{v.name()}"
+    
     @vars()[v.name()] = v
 
-    if v.value().is_a_procedure()
+    if v.value().is_a_procedure?()
       proc = v.value()
       switch proc.position()
         when 'top'
@@ -101,9 +105,47 @@ class Var_List
     val
       
   # ==============================================================
-  #                        Scope Ops.
+  #                        Run Procs
   # ==============================================================
   
+  run_line_tokens: ( pair ) ->
+    match = new Arguments_Match(new Line(pair, @env()))
+    if not @env().is_read_local()
+      match = @env().envs().read().run_line_tokens( pair, env )
+      
+    return match if match.is_full_match?()
+    
+    me = this
+    
+    if match 
+      line          = match.line()
+      is_full_match = match.is_full_match()
+      partial_match = match.is_a_match()
+    else
+      line = new Line( pair, env ) 
+      is_full_match = false
+      partial_match = false
+
+    loop 
+      is_any_match  = false
+      
+      for proc in @procs()
+        loop
+          match = new Arguments_Match( line, proc)
+          break if not match.is_a_match()
+            
+          partial_match = is_any_match = true
+          if match.is_full_match()
+            is_full_match = true
+            break
+          
+        break if is_full_match
+        
+      break if is_full_match
+      break if not is_any_match
+    
+    match
+       
 
 module.exports = Var_List
 

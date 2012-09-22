@@ -14,6 +14,7 @@ Base_Data    = require "i_love_u/lib/Base_Data"
 
 Arguments_Match = require "i_love_u/lib/Arguments_Match"
 Var_List  = require "i_love_u/lib/Var_List"
+Env_List  = require "i_love_u/lib/Env_List"
 LOOP_LIMIT   = 10123
 
 if !RegExp.captures
@@ -72,90 +73,60 @@ exports.i_love_u = class i_love_u
   # ==============================================================
   
   rw.ize(this)
-  @read_able       "outside_scope", 'vars', 'scope', 'loop_total'
+  @read_able       'vars', 'envs', 'loop_total'
   @read_write_able "address"
   @read_able       'code', 'original_code', 'eval_ed'
   
-  constructor: (str, env) ->
+  constructor: (str, outside_env) ->
     if not _.isString(str) 
       str = str.text()
     @rw "original_code",  str
     @rw "code",           str.standardize()
     @rw "eval_ed",        []
-    @rw 'scope',          []
+    @rw 'envs',           new Env_List(this, outside_env)
     @rw "loop_total",     0
-    @_vars_ = new Var_List(this)
+    @rw "vars",           new Var_List(this)
       
-    if env
-      @rw  'outside_scope', env
-    else
-      @rw  'outside_scope', "none"
+    if not @envs().has_outside()
       for init in @constructor.inits()
         init(this)
     
-  is_top_most_scope: () ->
-    @outside_scope() is 'none'
-
-
+  for m in ['is_read_local', 'is_write_local', 'has_outside']
+    this.prototype[m] = new Function """
+      return this.envs().#{m}();
+    """
   # ==============================================================
   #                      Functions & Procedures
   # ==============================================================
-  
   
   record_loop: (text) ->
     @loop_total( @loop_total() + 1 )
     if @loop_total() > LOOP_LIMIT
       throw new Error("Loop limit exceeded #{LOOP_LIMIT} using: #{text}.")
     @loop_total()
-    
-  run_tokens: (args...) ->
-    line          = new Line( args... ) 
-    is_full_match = false
-    partial_match = false
-    me            = this
-
-    loop 
-      is_any_match  = false
       
-      for proc in @procs()
-        loop
-          match = new Arguments_Match(this, line, proc)
-          break if not match.is_a_match()
-            
-          partial_match = is_any_match = true
-          if match.is_full_match()
-            is_full_match = true
-            break
-          
-        break if is_full_match
-        
-      break if is_full_match
-      break if not is_any_match
+  run_line_tokens: ( pair ) ->
+    @vars().run_line_tokens pair
     
-    results = 
-      is_match:      partial_match
-      is_full_match: is_full_match
-      compiled:      line.pair()
-      
   run: () ->
     lines = (new englishy.Englishy @code()).to_tokens()
       
     for line_and_block, i in lines
-      results = @run_tokens( line_and_block[0], line_and_block[1] )
+      match = @run_line_tokens( line_and_block )
           
-      if not results.is_any_match or not results.is_full_match
+      if (not match.is_a_match?()) or not match.is_full_match?()
         end = if line_and_block[1]
           ":"
         else
           "."
         
         line = "#{englishy.Stringy.to_strings(line_and_block[0]).join(" ")}#{end}"
-        if not results.is_match
+        if not match.is_a_match?()
           throw new Error("No match for: #{line}")
-        if not results.is_full_match
-          throw new Error("No full match: #{line} => #{results.compiled[0].join(" ")}#{end}")
+        if match and not match.is_full_match()
+          throw new Error("No full match: #{line} => #{match.line().line().join(" ")}#{end}")
 
-      @eval_ed().push results.compiled
+      @eval_ed().push match.line().line() if match
 
     true
   

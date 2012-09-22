@@ -51,7 +51,7 @@ word_is_word = new Procedure "!>WORD< is: !>ANY<."
 word_is_word.procedure  (match) ->
   name = _.first match.args() 
   val  = _.last  match.args()
-  match.env().add_data name, val
+  match.line().calling_env().envs().write().vars().push_name_and_value name, val
   val
 
 clone_list = new Procedure "a clone of !>List<"
@@ -211,7 +211,7 @@ while_loop.procedure (match) ->
   if ans
     env.record_loop( match.line().origin_line_text() )
     (new i_love_u(block, env)).run()
-    env.run_tokens match.line().origin_line(), block 
+    env.run_line_tokens [ match.line().origin_line(), block ]
     
   env.scope().push ans
   ans
@@ -287,25 +287,25 @@ top_bottom.procedure  (match) ->
 procs = {}
 procs.i_love_u = (ilu) ->
   
-  ilu.vars().push_name_and_var 'if_true',    if_true
-  ilu.vars().push_name_and_var 'else_false', else_false
-  ilu.vars().push_name_and_var 'as_num', as_num
-  ilu.vars().push_name_and_var 'md_num', md_num
+  ilu.vars().push_name_and_value 'if_true',    if_true
+  ilu.vars().push_name_and_value 'else_false', else_false
+  ilu.vars().push_name_and_value 'as_num', as_num
+  ilu.vars().push_name_and_value 'md_num', md_num
 
-  ilu.vars().push_name_and_var 'word_is_word', word_is_word
-  ilu.vars().push_name_and_var 'update_word',  update_word
+  ilu.vars().push_name_and_value 'word_is_word', word_is_word
+  ilu.vars().push_name_and_value 'update_word',  update_word
 
-  ilu.vars().push_name_and_var 'clone_list',  clone_list
-  ilu.vars().push_name_and_var 'derive_list', derive_list
+  ilu.vars().push_name_and_value 'clone_list',  clone_list
+  ilu.vars().push_name_and_value 'derive_list', derive_list
 
-  ilu.vars().push_name_and_var 'not_equals', not_equals
-  ilu.vars().push_name_and_var 'equals',     equals
-  ilu.vars().push_name_and_var 'while_loop', while_loop
-  ilu.vars().push_name_and_var '_do_',       _do_
-  ilu.vars().push_name_and_var 'a_new_noun', a_new_noun
-  ilu.vars().push_name_and_var 'prop_of_noun', prop_of_noun
-  ilu.vars().push_name_and_var 'insert_into_list', insert_into_list
-  ilu.vars().push_name_and_var 'top_bottom', top_bottom
+  ilu.vars().push_name_and_value 'not_equals', not_equals
+  ilu.vars().push_name_and_value 'equals',     equals
+  ilu.vars().push_name_and_value 'while_loop', while_loop
+  ilu.vars().push_name_and_value '_do_',       _do_
+  ilu.vars().push_name_and_value 'a_new_noun', a_new_noun
+  ilu.vars().push_name_and_value 'prop_of_noun', prop_of_noun
+  ilu.vars().push_name_and_value 'insert_into_list', insert_into_list
+  ilu.vars().push_name_and_value 'top_bottom', top_bottom
   
   
 module.exports = procs

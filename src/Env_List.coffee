@@ -14,9 +14,15 @@ class Env_List
   constructor: (local, outside) ->
     @rw 'local', local
     @rw 'outside', outside
-    @rw 'read' , outside
+    @rw 'read' , (outside || local)
     @rw 'write', local
     
+  has_outside: () ->
+    @outside() and @outside() isnt "none"
+
+  is_local_only: () ->
+    (not @has_outside()) or (@read() is @local() and @write() is @local())
+
   is_read_local: () ->
     @local() is @read()
 

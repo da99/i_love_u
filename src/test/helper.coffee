@@ -4,9 +4,9 @@ exports.new_luv = (args...) ->
 
 exports.stack = (env) ->
   arr = []
-  for obj in env.data() 
-    if not (obj.name() in ['List'])
-      arr.push if obj.value().values
+  for v in env.vars() 
+    if not (v.value().is_a_procedure?())
+      arr.push if v.value().values
         obj.value().values()
       else
         obj.value()
