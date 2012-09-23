@@ -87,9 +87,7 @@ if_true.procedure (match) ->
     luv = new i_love_u match.line().block(), match.env()
     luv.run()
     
-  v = new Var("last-if-value", ans)
-  v.is_local_only true
-  match.env().push(v)
+  match.env().push Var.new_local "last-if-value", ans
   ans
     
 
@@ -194,10 +192,10 @@ _do_.procedure  (match) ->
 
   luv = new i_love_u(block, env)
   luv.run()
-  v = new Var "last-do-value", true
-  b = new Var "last-do-block", block
-  match.env().push v
-  match.env().push b
+  v = new Var
+  b = 
+  match.env().push Var.new_local "last-do-value", true
+  match.env().push Var.new_local "last-do-block", block
   true
 
 while_loop = new Procedure "While !>true_or_false<."

@@ -9,10 +9,11 @@ class Var
   @read_write_able "is_local_only"
   
 
-  constructor: (name, val) ->
+  constructor: (name, val, yield_to) ->
     @rw "name",           name
     @rw "value",          val
-    @rw "is_local_only",  true
+    @rw "is_local_only",  false
+    yield_to(this) if yield_to
 
   has_regexp_name: () ->
     _.isRegExp(@name())
@@ -30,3 +31,7 @@ class Var
     
 
 module.exports = Var
+module.exports.new_local = (args...) ->
+  v = new Var(args...)
+  v.is_local_only true
+  v
