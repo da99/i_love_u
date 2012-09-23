@@ -40,14 +40,14 @@ describe "i_love_u", () ->
       l.address "/some.address/"
       assert.equal l.address(), "/some.address/"
       
-  describe 'update_data(k,v)', () ->
+  describe 'update_name_and_value(k,v)', () ->
 
     it "updates value of given key", () ->
       u = new_luv """
         My-Var is: 1.
       """
       u.run()
-      u.update_data "My-Var", 2
+      u.update_name_and_value "My-Var", 2
       assert.deepEqual stack(u), [2]
 
   describe 'delete_data(k)', () ->

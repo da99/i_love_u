@@ -44,6 +44,7 @@ class Var_List
     if not @env().is_read_local()
       vars =  @env().read().vars().array(type).concat vars
     vars
+    
   # ==============================================================
   #                      Push/Remove/Get Ops
   # ==============================================================
@@ -60,22 +61,30 @@ class Var_List
     
     @get(name, line) or name
       
-  get: (name, line) ->
-    _var = null
+  get_vars_with: (name, line) ->
+    _vars = null
     
     if not @env().envs().is_read_local()
-      _var = @env().envs().read().vars().get(name, line)
+      _vars = @env().envs().read().vars().get_vars_with(name, line)
   
-    if not _var
-      _var = if @vars()[name] 
-        @vars()[name]
+    if not _vars
+      _vars = if @vars()[name] 
+        @vars()
       else
-        _.find @pattern_based(), (v) ->
+        found = _.find @pattern_based(), (v) ->
           v.is_named(name)
-      if _var and _var.is_local_only() and line.calling_env() isnt @env()
-        _var = null
+        found and @vars()
+        
           
-    _var
+    _vars
+    
+  get: (name, line) ->
+    vars = @get_vars_with(name, line)
+    return vars unless vars
+    return vars[name] unless vars[name]
+    v = vars[name]
+    return null if v and v.is_local_only() and line.calling_env() isnt @env()
+    v
       
   push_name_and_value: (name, val) ->
     if arguments.length isnt 2
@@ -107,6 +116,13 @@ class Var_List
 
     v
       
+  update_name_and_value: (name, val) ->
+    vars = @get_vars_with(name)
+    if not vars
+      @get_or_throw(name)
+    vars[name] = new Var(name, val)
+    vars[name]
+
       
   remove: (n) ->
     return @scope.remove(n) unless @to_local()

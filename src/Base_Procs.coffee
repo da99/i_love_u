@@ -74,7 +74,7 @@ update_word = new Procedure "Update !>WORD< to: !>ANY<."
 update_word.procedure  (match) ->
   name = _.first match.args()
   val  = _.last  match.args()
-  match.env().update_data name, val
+  match.env().update_name_and_value name, val
   val
      
 if_true = new Procedure "If !>true_or_false<:"
