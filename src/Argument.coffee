@@ -72,7 +72,9 @@ class Argument
       raw_txt = new englishy.Stringy(raw_txt)
 
     txt = raw_txt.value()
-    ctxt = env.vars().get_if_data(txt, line) 
+    ctxt = env.get_if_data (mess) ->
+      mess.name txt
+      mess.line line
     target = if raw_txt.is_quoted()
       txt
     else

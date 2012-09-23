@@ -82,7 +82,7 @@ exports.i_love_u = class i_love_u
         init(this)
     
   meths = {
-    'vars': ['get', 'get_if_data', 'run_line_tokens', 'push', 'push_name_and_value', 'update_name_and_value'],
+    'vars': ['get', 'get_if_data', 'run_line_tokens', 'push', 'push_name_and_value', 'update_name_and_value', 'delete'],
     'envs': ['is_read_local', 'is_write_local', 'has_outside', 'read', 'write']
   }
   for prop, arr of meths

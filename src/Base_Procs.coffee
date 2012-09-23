@@ -51,7 +51,9 @@ word_is_word = new Procedure "!>WORD< is: !>ANY<."
 word_is_word.procedure  (match) ->
   name = _.first match.args() 
   val  = _.last  match.args()
-  match.line().calling_env().write().push_name_and_value name, val
+  match.line().calling_env().write().push (mess) ->
+    mess.name  name
+    mess.value val
   val
 
 clone_list = new Procedure "a clone of !>List<"
@@ -87,7 +89,7 @@ if_true.procedure (match) ->
     luv = new i_love_u match.line().block(), match.env()
     luv.run()
     
-  match.env().push Var.new_local "last-if-value", ans
+  match.env().push(  Var.new_local "last-if-value", ans )
   ans
     
 
@@ -194,8 +196,8 @@ _do_.procedure  (match) ->
   luv.run()
   v = new Var
   b = 
-  match.env().push Var.new_local "last-do-value", true
-  match.env().push Var.new_local "last-do-block", block
+  match.env().push( Var.new_local "last-do-value", true )
+  match.env().push( Var.new_local "last-do-block", block)
   true
 
 while_loop = new Procedure "While !>true_or_false<."
@@ -216,7 +218,7 @@ while_loop.procedure (match) ->
     (new i_love_u(block, env)).run()
     env.run_line_tokens [ match.line().origin_line(), block ]
     
-  env.scope().push ans
+  env.update_or_push( Var.new_local "last-while-loop", ans )
   ans
   
 a_new_noun = new Procedure "a new !>Noun<"

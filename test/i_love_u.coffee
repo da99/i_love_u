@@ -17,7 +17,9 @@ describe "i_love_u", () ->
       l.run()
       nl = new_luv("Two is: 2.", l)
       nl.run()
-      nl.vars().push( new Var("Five", 5) )
+      nl.vars().push (mess) ->
+        mess.name "Five"
+        mess.value 5
       
       assert.deepEqual stack(nl), ['1', '2', 5]
 
@@ -33,14 +35,14 @@ describe "i_love_u", () ->
 
     it "sets List as a basic noun.", () ->
       l = new_luv("This starts a data list.")
-      assert.deepEqual l.get('List', new Line("Print List.", l)).value().is_a_noun(), true 
+      assert.deepEqual l.get('List').value().is_a_noun(), true 
 
     it ".address is write_able", () ->
       l = new_luv("This is code.")
       l.address "/some.address/"
       assert.equal l.address(), "/some.address/"
       
-  describe 'update_name_and_value(k,v)', () ->
+  describe 'update(k,v)', () ->
 
     it "updates value of given key", () ->
       u = new_luv """
@@ -50,7 +52,7 @@ describe "i_love_u", () ->
       u.update_name_and_value "My-Var", 2
       assert.deepEqual stack(u), [2]
 
-  describe 'delete_data(k)', () ->
+  describe 'delete(k)', () ->
 
     it "removes value from data list", () ->
       u = new_luv """
@@ -61,7 +63,7 @@ describe "i_love_u", () ->
         Five is: 5.
       """
       u.run()
-      u.delete_data "Four"
+      u.delete "Four"
       assert.deepEqual stack(u), ['1','2', '3', '5']
 
     it "raises error if data does not exist", () ->
@@ -70,7 +72,7 @@ describe "i_love_u", () ->
       """
       u.run()
       err = try
-        u.delete_data "My-Vars"
+        u.delete "My-Vars"
       catch e
         e
       assert.equal err.message, "Data does not exist: My-Vars."

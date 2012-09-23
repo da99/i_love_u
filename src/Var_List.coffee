@@ -4,6 +4,50 @@ Var  = require "i_love_u/lib/Var"
 Line = require "i_love_u/lib/Line"
 Arguments_Match = require "i_love_u/lib/Arguments_Match"
 
+class Message
+
+  rw.ize this
+
+  @read_write_able_bool "is_done"
+  @read_write_able "name", "list", "action"
+
+  constructor: (yield_to) ->
+    yield_to(this)
+
+  action: () ->
+    if arguments.length is 1
+      @_action_ = _.first arguments
+      if @_action_ isnt "reading" and @_action_ isnt "writing"
+        throw new Error "Unknown action: #{@_action_}"
+    @_action_
+
+  var: () ->
+    if arguments.length is 1
+      @_var_ = _.first arguments
+      @name( @_var_.name() ) unless @name()
+    @_var_
+
+  line: () ->
+    if arguments.length is 1
+      @_line_ = _.first arguments
+      @calling_env(@_line_.calling_env()) unless @calling_env()
+    @_line_
+    
+  is_a_message: () ->
+    true
+
+  is_for_reading: () ->
+    @action() is 'reading'
+    
+  is_for_writing: () ->
+    @action() is 'writing'
+
+  value: (val) ->
+    if arguments.length is 1
+      @var(new Var @name(), val)
+    @var()
+
+  
 # Can hold vars and other lists of vars.
 class Var_List
 
@@ -49,61 +93,101 @@ class Var_List
   #                      Push/Remove/Get Ops
   # ==============================================================
 
-  has_named: (args...) ->
-    not not @get(args...)
-
-  get_or_throw: (name) ->
-    @get(name) or throw new Error("Variable not found: #{name}")
+  to_message: () ->
+    unk = arguments[0]
+    if _.isString(unk)
+      name = unk
+      unk = (mess) ->
+        mess.name name
+    m = if unk.is_a_message?()
+      unk
+    else
+      new Message (mess) ->
+        unk(mess)
+        mess.calling_env @env() unless mess.calling_env()
+    f = arguments[1]
+    f(m) if f
+    m
     
-  get_if_data: (name, line) ->
-    if not line.is_a_line?()
-      throw new Error "Line is required."
-    
-    @get(name, line) or name
+  has_named: (yield_to) ->
+    @find_for(yield_to).is_done()
       
-  get_vars_with: (name, line) ->
-    _vars = null
-    
-    if not @env().envs().is_read_local()
-      _vars = @env().envs().read().vars().get_vars_with(name, line)
+  find_for_or_throw: (unk) ->
+    i = @find_for(unk)
+    return i if i.is_done()
+    throw new Error "No var named: #{i.name()}"
   
-    if not _vars
-      _vars = if @vars()[name] 
-        @vars()
-      else
-        found = _.find @pattern_based(), (v) ->
-          v.is_named(name)
-        found and @vars()
+  find_for: (unk) ->
+    m      = @to_message(unk)
+    action = m.action()
+    name   = m.name()
+    calling_env = m.calling_env()
+
+    v = if @vars()[name]
+      @vars()[name]
+    else if m.is_for_reading()
+      _.find @pattern_based(), (_v_) ->
+        _v_.is_named(name)
         
-          
-    _vars
-    
-  get: (name, line) ->
-    vars = @get_vars_with(name, line)
-    return vars unless vars
-    return vars[name] unless vars[name]
-    v = vars[name]
-    return null if v and v.is_local_only() and line.calling_env() isnt @env()
-    v
+    if v and v.is_local_only() and calling_env isnt @env()
+      v = undefined
       
-  push_name_and_value: (name, val) ->
-    if arguments.length isnt 2
-      throw new Error "Arguments length can only be 2: #{arguments}"
-    @push(new Var name, val)
+    if v
+      m.var     v
+      m.list    this
+      m.is_done true
+      return m
 
-  push: (v) ->
-    if arguments.length isnt 1
-      throw new Error ".push only accepts one argument."
+    if not @env().is_write_local()
+      m = @env().write().find_for(m)
+      return m if m.is_done()
+        
+    if m.is_for_reading() and not @env().is_read_local() 
+      m = @env().read().find_for(m)
+      return m if m.is_done()
+
+    m
+
+  get_or_throw: (yield_to) ->
+    @find_for_or_throw(yield_to).var()
+    
+  get_if_data: (yield_to) ->
+    m = @find_for yield_to 
+    if m.is_done()
+      m.var()
+    else
+      m.name()
+    
+  get: (yield_to) ->
+    i = @find_for yield_to
+    i.is_done() and i.var()
+
+  push_name_and_value: (n, v) ->
+    @push (mess) ->
+      mess.name n
+      mess.value v
+
+  push: (yield_to) ->
+    if yield_to.is_a_var?()
+      _var_ = yield_to
+      yield_to = (mess) ->
+        mess.var _var_
+    m = @to_message yield_to, (mess) ->
+      mess.action "writing"
+      
     if not @env().is_write_local() 
-      return @env().envs().write().vars().push v
+      return @env().envs().write().push m
+      
+    if @find_for(m).is_done()
+      throw new Error "Name for var already defined: #{old.name()}"
     
-    if @has_named v.name()
-      throw new Error "Name for var already defined: #{v.name()}"
-    
-    @vars()[v.name()] = v
+    v    = m.var()
+    name = m.name()
+    proc = v.value()
+    @vars()[name] = v
+    m.is_done true
 
-    if v.value().is_a_procedure?()
-      proc = v.value()
+    if proc.is_a_procedure?()
       switch proc.position()
         when 'top'
           @procs().unshift proc
@@ -113,34 +197,36 @@ class Var_List
           @procs().push proc
         else
           throw new Error "Unknown position for \"#{proc.pattern()}\": #{proc.position()}"
-
-    v
+        
+    m.var()
       
-  update_name_and_value: (name, val) ->
-    vars = @get_vars_with(name)
-    if not vars
-      @get_or_throw(name)
-    vars[name] = new Var(name, val)
-    vars[name]
+  update: (yield_to) ->
+    m = @to_message yield_to, (mess) ->
+      mess.action "writing"
+
+    @find_for_or_throw(m).list().vars()[name] = m.var()
+    m.is_done true
+    m.var()
 
       
-  remove: (n) ->
-    return @scope.remove(n) unless @to_local()
-    
-    throw new Error "Not found: #{n}" unless @is_named(n)
-    val = @vars()[n]
-    delete @vars()[n]
+  delete: (yield_to) ->
+    m = @to_message yield_to, (mess) ->
+      mess.action "writing"
+    m = @find_for_or_throw m
+    delete m.list()[m.name()]
     
     # ==== Remove if in procedures list.
-    proc = val and val.value()
+    proc = m.var()
+    proc_list = m.list().procs()
     if proc.is_a_procedure?()
-      for p, i in @procs()
+      for p, i in proc_list
         break if p is proc
       if i > -1 
-        @procs().splice(i,1)
+        proc_list.splice(i,1)
         
-    val
-      
+    m.var()
+    
+
   # ==============================================================
   #                        Run Procs
   # ==============================================================

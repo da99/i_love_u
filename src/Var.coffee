@@ -6,7 +6,7 @@ class Var
 
   rw.ize this
   @read_able "name", "value"
-  @read_write_able "is_local_only"
+  @read_write_able "is_local_only", "regexp"
   
 
   constructor: (name, val, yield_to) ->
@@ -16,7 +16,7 @@ class Var
     yield_to(this) if yield_to
 
   has_regexp_name: () ->
-    _.isRegExp(@name())
+    _.isRegExp(@regexp())
 
   is_a_var: () ->
     true
@@ -27,10 +27,22 @@ class Var
   is_named: (n) =>
     return true if @name() is n
     return false unless @has_regexp_name()
-    @name().test n
+    @regexp().test n
     
 
 module.exports = Var
+module.exports.to_var = (args) ->
+  switch args.length
+    when 2
+      new Var args[0], args[1]
+    when 1
+      if args[0].is_a_var?()
+        v
+      else
+        throw new Error "Unknown argument: #{args[0]}"
+    else
+      throw new Error "Unknown arguments: #{Array.prototype.slice.apply args}"
+
 module.exports.new_local = (args...) ->
   v = new Var(args...)
   v.is_local_only true

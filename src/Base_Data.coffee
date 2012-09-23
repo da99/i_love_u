@@ -4,14 +4,17 @@
 module.exports = {}
 module.exports.i_love_u = (ilu) ->
     
-  ilu.vars().push_name_and_value /^Block_Text_Line_[0-9]+$/, (name, env, line) ->
+   block_text_line_i = new Var 'Block_Text_Line_i', (name, env, line) ->
       block = line.block()
       if !block
         throw new Error("Block is not defined.")
       num = parseInt name.split('_').pop()
       val = block.text_line( num )
-
-  ilu.vars().push_name_and_value /^Block_List_[0-9]+$/, (name, env, line) ->
+  block_text_line_i.regexp /^Block_Text_Line_[0-9]+$/ 
+  ilu.vars().push block_text_line_i
+  
+  
+  block_list_i = new Var "Block_List_i", (name, env, line) ->
       block = line.block()
       if !block
         throw new Error("Block is not defined.")
@@ -23,11 +26,15 @@ module.exports.i_love_u = (ilu) ->
         if v.is_quoted()
           list.push v.value()
         else
-          list.push env.get_if_data(v.value(), line)
+          list.push env.get_if_data (mess) ->
+            mess.name v.value()
+            mess.line line
       list
+  block_list_i.regexp /^Block_List_[0-9]+$/
+  ilu.vars().push block_list_i
       
       
-  ilu.vars().push_name_and_value "List", {
+  list_noun =
     is_a_noun: () ->
       true
       
@@ -39,4 +46,11 @@ module.exports.i_love_u = (ilu) ->
 
     values: () ->
       @target().values()
-  }
+  
+  ilu.vars().push (mess) ->
+    mess.name "List"
+    mess.value list_noun
+    
+    
+    
+    
