@@ -97,7 +97,9 @@ class Argument
         compiled_arg = if s.is_quoted()
           s.value()
         else
-          env.get_if_data s.value(), line
+          env.get_if_data (mess) ->
+            mess.name s.value()
+            mess.line line
           
         mismatch = not @types()[i].is_a_match_with( compiled_arg ) 
         break if mismatch
