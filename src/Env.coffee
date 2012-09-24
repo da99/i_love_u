@@ -16,7 +16,6 @@ exports.Env = class Env
     this[v.replace(/-/g, '_')] = new Function """
       return "#{v}";
     """
-  @No_Match   = "no_match"
     
   @throw_unless_valid_env = (e) ->
     if not (e in @Envs)
@@ -25,10 +24,9 @@ exports.Env = class Env
 
   @inits: () ->
     @_inits_ ?= []
-    if arguments.length isnt 0
-      for v in arguments
-        @_inits_.push v
-      @_inits_ = _.unique(@_inits_)
+    if @_inits_.length is 0
+      @_inits_.push Base_Procs.i_love_u
+      @_inits_.push Base_Data.i_love_u
     @_inits_
 
 
@@ -38,7 +36,7 @@ exports.Env = class Env
   
   rw.ize(this)
   @read_able       "vars", "envs", "loop_total", "code", "original_code", "outside", "local"
-  @read_write_able "address", "read_from", "write_to"
+  @read_write_able "address"
   
   constructor: (str, outside_env) ->
     if not _.isString(str) 
@@ -49,16 +47,10 @@ exports.Env = class Env
     @rw "local",          this
     @rw "loop_total",     0
     @rw "vars",           new Var_List(this)
-    @read_from @constructor.Outside_Env()
-    @write_to  @constructor.Local_Env()
       
-    if not @envs().has_outside()
-      for init in @constructor.inits()
-        init(this)
-    
-  is_an_env: () ->
-    true
-
+    if @is_page()
+      ( init(this) for init in @constructor.inits() )
+        
   meths = {
     'vars': ['get', 'get_if_data', 'run_line_tokens', 'push', 'push_name_and_value', 'update_name_and_value', 'delete']
   }
@@ -68,23 +60,28 @@ exports.Env = class Env
         return this.local().#{prop}().#{meth}.apply( this.local().#{prop}(), Array.prototype.slice.apply(arguments) );
       """
 
+  is_an_env: () ->
+    true
+
   # ==============================================================
   #                      Manage Env
   # ==============================================================
 
   read_from: () ->
+    @_read_from_ ?= @constructor.Outside_Env()
     if arguments.length is 1
       env = arguments[0]
       @constructor.throw_unless_valid_env env
-      @write "read_from" e
-    @read "read_from"
+      @_read_from_ = e
+    @_read_from_
 
   write_to: () ->
+    @_write_to_ ?= @constructor.Local_Env()
     if arguments.length is 1
       env = arguments[0]
       @constructor.throw_unless_valid_env env
-      @write "write_to" e
-    @read "write_to"
+      @_write_to_ = e
+    @_write_to_
 
   has_outside: () ->
     @outside() and @outside().is_an_env?() 
@@ -132,7 +129,6 @@ exports.Env = class Env
     true
     
     
-Env.inits Base_Procs.i_love_u, Base_Data.i_love_u
 
 
 

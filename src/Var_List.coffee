@@ -59,7 +59,7 @@ class Var_List
   constructor: (env) ->
     @rw 'env',           env
     @rw 'object_id',     ++Var_List.counter
-    @rw 'vars',          {}
+    @rw 'kv',          {}
     @rw 'procs',         []
     @rw 'pattern_based', {}
     
@@ -71,7 +71,7 @@ class Var_List
     vars = switch type
       when 'vars', 'var_values'
         arr = []
-        for k, v of @vars() 
+        for k, v of @kv() 
           if v.is_user_defined() 
             if type is 'var_values'
               arr.push v.value()
@@ -79,9 +79,9 @@ class Var_List
               arr.push v
         arr
       when 'procedures'
-        ( v for k, v of @vars() when v.is_a_procedure?() )
+        ( v for k, v of @kv() when v.is_a_procedure?() )
       when 'all'
-        @vars()
+        ( v for k, v of @kv() )
       else
         throw new Error "Unknown var type: #{type}"
       
@@ -123,8 +123,8 @@ class Var_List
     name   = m.name()
     calling_env = m.calling_env()
 
-    v = if @vars()[name]
-      @vars()[name]
+    v = if @kv()[name]
+      @kv()[name]
     else if m.is_for_reading()
       _.find @pattern_based(), (_v_) ->
         _v_.is_named(name)
@@ -184,7 +184,7 @@ class Var_List
     v    = m.var()
     name = m.name()
     proc = v.value()
-    @vars()[name] = v
+    @kv()[name] = v
     m.is_done true
 
     if proc.is_a_procedure?()
@@ -204,7 +204,7 @@ class Var_List
     m = @to_message yield_to, (mess) ->
       mess.action "writing"
 
-    @find_for_or_throw(m).list().vars()[name] = m.var()
+    @find_for_or_throw(m).list().kv()[name] = m.var()
     m.is_done true
     m.var()
 
