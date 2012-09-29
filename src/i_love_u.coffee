@@ -23,7 +23,6 @@ if !RegExp.first_capture
     match = null
     vals  = null
     r.exec(str)
-    
 
 exports.i_love_u = Env
 

@@ -1,5 +1,5 @@
-rw = require "rw_ize"
-_  = require "underscore"
+rw   = require "rw_ize"
+_    = require "underscore"
 Var  = require "i_love_u/lib/Var"
 Line = require "i_love_u/lib/Line"
 Arguments_Match = require "i_love_u/lib/Arguments_Match"
@@ -9,43 +9,63 @@ class Message
   rw.ize this
 
   @read_write_able_bool "is_done"
-  @read_write_able "name", "list", "action"
+  @read_write_able "action"
+  @read_able "name", "var", "value", "origin_env", "line", "write_to"
 
   constructor: (yield_to) ->
     yield_to(this)
 
-  action: () ->
-    if arguments.length is 1
-      @_action_ = _.first arguments
-      if @_action_ isnt "reading" and @_action_ isnt "writing"
-        throw new Error "Unknown action: #{@_action_}"
-    @_action_
-
-  var: () ->
-    if arguments.length is 1
-      @_var_ = _.first arguments
-      @name( @_var_.name() ) unless @name()
-    @_var_
-
-  line: () ->
-    if arguments.length is 1
-      @_line_ = _.first arguments
-      @calling_env(@_line_.calling_env()) unless @calling_env()
-    @_line_
-    
   is_a_message: () ->
     true
-
-  is_for_reading: () ->
-    @action() is 'reading'
     
-  is_for_writing: () ->
-    @action() is 'writing'
+  action: () ->
+    if arguments.length isnt 0
+      @write "action", arguments[0]
+      if not ( @read("action") in ["reading", "writing"] )
+        throw new Error "Unknown action: #{arguments[0]}"
+    @read "action"
+
+  name: () ->
+    if arguments.length isnt 0
+      @write "name", arguments[0]
+    if not @read("name") and @var()
+      return @var().name()
+    @read "name"
+    
+  var: () ->
+    if arguments.length isnt 0
+      @write "var", arguments[0]
+    @read "var"
 
   value: (val) ->
     if arguments.length is 1
       @var(new Var @name(), val)
     @var()
+
+  origin_env: () ->
+    if arguments.length isnt 0
+      @write "origin_env", arguments[0]
+    if not @read("origin_env") and @line()
+      return @line().calling_env()
+    @read "origin_env"
+
+  line: () ->
+    if arguments.length isnt 0
+      @write "line", arguments[0]
+    @read "line"
+    
+  write_to: () ->
+    if arguments.length isnt 0
+      @write "write_to", Env.throw_unless_valid_env( arguments[0] )
+      
+    if not @read "write_to" 
+      if @origin_env()
+        return @origin_env().write_to()
+      else
+        throw new Error "No write_to or origin_env specified."
+    
+    @read "write_to"
+
 
   
 # Can hold vars and other lists of vars.

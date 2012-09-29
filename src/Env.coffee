@@ -11,23 +11,24 @@ exports.Env = class Env
   #                      "Class" Functionality
   # ==============================================================
   
-  @Envs = "Local-Env", "Outside-Env", "Outside-Local-Env", "Page-Env"
-  for v in @Envs
+  @Env_Names = ["Local-Env", "Outside-Env", "Outside-Local-Env", "Page-Env"]
+  for v in @Env_Names
     this[v.replace(/-/g, '_')] = new Function """
       return "#{v}";
     """
     
-  @throw_unless_valid_env = (e) ->
-    if not (e in @Envs)
+  @validate_name = (e) ->
+    if not (e in @Env_Names)
       throw new Error "Invalid env: #{e}"
     e
 
-  @inits: () ->
-    @_inits_ ?= []
-    if @_inits_.length is 0
-      @_inits_.push Base_Procs.i_love_u
-      @_inits_.push Base_Data.i_love_u
-    @_inits_
+  @base: () ->
+    if not @_base_
+      e = new Env()
+      Base_Procs.i_love_u(e)
+      Base_Data.i_love_u(e)
+      @_base_ = e
+    @_base_
 
 
   # ==============================================================
@@ -38,19 +39,73 @@ exports.Env = class Env
   @read_able       "vars", "envs", "loop_total", "code", "original_code", "outside", "local"
   @read_write_able "address"
   
-  constructor: (str, outside_env) ->
-    if not _.isString(str) 
-      str = str.text()
-    @rw "original_code",  str
-    @rw "code",           str.standardize()
-    @rw "outside",        outside_env
-    @rw "local",          this
-    @rw "loop_total",     0
-    @rw "vars",           new Var_List(this)
-      
-    if @is_page()
-      ( init(this) for init in @constructor.inits() )
+  constructor: ( yield_to ) ->
+    @base = {}
+    @base["vars"] = {
+      "top-envs": [] 
+      "bottom-envs": []
+      "local-vars": []
+    }
+    @base[ Env.Local_Env() ] = this
+    
+    @base["functions"] =[]
+    @base["ilu"] = {"loop_total": 0} 
+    
+    yield_to(this) if yield_to
+    @read_var("top-envs").push Env.base()
         
+  # ==============================================================
+  #                      Manage Vars
+  # ==============================================================
+    
+  vars: () ->
+    @base["vars"]
+
+  force_update_var: (name, val) ->
+    @base["vars"][name] = val
+    
+  force_delete_var: (name, val) ->
+    delete @base["vars"][name]
+    
+  create_var: (name, val) ->
+    if _.has(@vars(), name)
+      throw new Error "Var already defined: #{name}"
+    
+    switch name
+      when "code"
+        str = val
+        if not _.isString(str) 
+          str = str.text()
+          @vars()["original_code"] = str
+          @vars()[name] = str.standardize()
+          @vars()[name]
+      else
+        @vars()[name] = val
+
+  has_var: (name) ->
+    _.has @base["vars"], name
+    
+  require_var: (name) ->
+    if not @has_var name
+      throw new Error "Var not defined: #{name}"
+    @base["vars"][name]
+    
+  read_var: (name) ->
+    @require_var name
+    
+  update_var: (name, val) ->
+    @require_var name
+    @base["vars"][name]
+
+  delete_var: (name) ->
+    @require_var name
+    delete @base["vars"][name]
+
+  # ==============================================================
+  #                      Forwarded functions
+  # ==============================================================
+  
+  
   meths = {
     'vars': ['get', 'get_if_data', 'run_line_tokens', 'push', 'push_name_and_value', 'update_name_and_value', 'delete']
   }
@@ -68,7 +123,7 @@ exports.Env = class Env
   # ==============================================================
 
   read_from: () ->
-    @_read_from_ ?= @constructor.Outside_Env()
+    @_read_from_ ?= Env.Outside_Env()
     if arguments.length is 1
       env = arguments[0]
       @constructor.throw_unless_valid_env env
@@ -76,7 +131,7 @@ exports.Env = class Env
     @_read_from_
 
   write_to: () ->
-    @_write_to_ ?= @constructor.Local_Env()
+    @_write_to_ ?= Env.Local_Env()
     if arguments.length is 1
       env = arguments[0]
       @constructor.throw_unless_valid_env env
@@ -84,13 +139,13 @@ exports.Env = class Env
     @_write_to_
 
   has_outside: () ->
-    @outside() and @outside().is_an_env?() 
+    (not not @outside()) and @outside().is_an_env?() 
     
   is_page: () ->
-    not @has_outside()
+    (not not @address())
 
   is_local_only: () ->
-    @read_from() is Env.Local_Env() and @write_to() is Env.Local_Env()
+    @is_read_local() and @is_write_local()
 
   is_read_local: () ->
     @read_from() is Env.Local_Env()
