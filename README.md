@@ -2,7 +2,10 @@
 Disclaimer:
 -----------
 
-This is still under development. 
+This abomination no longer being developed.
+
+Check out it's successor: [Factor\_Script](https://github.com/da99/factor_script)
+
 You *can't* use it for anything practical 
 right now. 
 
