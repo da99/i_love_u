@@ -210,10 +210,10 @@ class Argument
       @d.user_pat ?= "!>NUM<"
 
     is_a_match_with: (unk) ->
-      !isNaN( parseFloat(unk) )
+      !isNaN( Number(unk) )
 
     convert: (unk) ->
-      parseFloat(unk)
+      Number(unk)
       
   @Noun:
     d: {}
